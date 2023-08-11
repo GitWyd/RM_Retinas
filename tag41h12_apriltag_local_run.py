@@ -87,7 +87,7 @@ while True:
 
     #     # Draw the detections on the original color frame
     for tag in result:
-        # Get the four corners of the tag
+        # Get the four corners of the tag (##### 2D IMAGE COORDINATES OF THE TAG ####)
         corners = tag.corners.astype(int)
 
         # Draw the tag boundary
@@ -96,8 +96,11 @@ while True:
         # Draw tag id
         cv2.putText(frame, str(tag.tag_id), tuple(corners[0]), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
 
-        # Define the model points (in 3D space) of the tag (assuming it's a 5x5 square)
-        model_points = np.float32([[-2.5, -2.5, 0], [2.5, -2.5, 0], [2.5, 2.5, 0], [-2.5, 2.5, 0]])
+        # Define the model points (in 3D space) of the tag (55mm*55mm is the tag size)
+        # model_points = np.float32([[-2.75, -2.75, 0], [2.75, -2.75, 0], [2.75, 2.75, 0], [-2.75, 2.75, 0]])
+        # 18mm * 18mm
+        model_points = np.float32([[-0.9, -0.9, 0], [0.9, -0.9, 0], [0.9, 0.9, 0], [-0.9, 0.9, 0]])
+
 
         # Estimate the tag's pose in the camera frame
         ret, rvec, tvec = cv2.solvePnP(model_points, tag.corners.astype(np.float32).reshape(-1, 2), mtx, dist)
