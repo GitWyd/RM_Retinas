@@ -11,7 +11,7 @@ Matplotlib
 Key Features:
 
 AprilTag Detection: Detects AprilTags in real-time from a webcam feed.
-Camera Calibration: Computes the calibration matrix for the camera
+Camera Calibration: Computes the calibration matrix for the camera.
 Pose Estimation: Computes the 3D pose of each detected tag relative to the camera using OpenCV's solvePnP.
 World Coordinate Transformation: Transforms detected tag poses into a global coordinate system, defined by certain "world tags".
 Visualization: Displays the video feed with detected tags highlighted, showing tag ID, global pose, and reprojection error.
