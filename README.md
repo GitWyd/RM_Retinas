@@ -1,4 +1,4 @@
-AprilTag Detection and Pose Estimation with OpenCV
+AprilTag Tracking and Pose Estimation with OpenCV
 
 Requirements:
 
