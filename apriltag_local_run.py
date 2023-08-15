@@ -1,12 +1,13 @@
+
 import cv2
-from dt_apriltags import Detector
+import apriltag
 import numpy as np
-    
+
 # ############################## CAMERA INDICE CODE ##############################333
 # def find_all_available_cameras(max_cameras_to_check=10):
 #     available_cameras = []
 #     for i in range(max_cameras_to_check):
-#         cap = cv2.VideoCapture(i)q
+#         cap = cv2.VideoCapture(i)
 #         if cap is not None and cap.isOpened():
 #             available_cameras.append(i)
 #             cap.release()
@@ -19,18 +20,23 @@ import numpy as np
 # else:
 #     print("No available cameras  found")
 
-###########################################.3##############33
+#########################################################33
 
-detector = Detector(searchpath=['apriltags'],
-                       families='tag36h11',
-                    #    families='tagStandard41h12',
-                       nthreads=8,
-                       quad_decimate=1.0,
-                       quad_sigma=0.2,  # a little blurring helps, better than 0.0
-                       refine_edges=True,
-                       decode_sharpening=0.25,  # change to true to refine the decoded bits by sampling the pixel neighborhood around the bit
-                       debug=False
-                       )
+# Initialize the apriltag detector
+detector = apriltag.Detector(apriltag.DetectorOptions(
+            families='tag36h11',
+            # families='tag41h12',
+            # families = "tagStandard41h12",
+            border=1,
+            nthreads=8,
+            quad_decimate=1.0,
+            quad_blur=0.2, # a little blurring helps, bettter than 0.0
+            refine_edges=True,
+            refine_decode=True, # change to true to refine the decoded bits by sampling the pixel neighborhood around the bit
+            refine_pose=False, # change to true to refine tag pose estimate
+            debug=False,
+            quad_contours=True
+            ))
 
 
 cap = cv2.VideoCapture(0)
@@ -48,6 +54,11 @@ mtx = np.array([
 
 # Use a null distortion matrix (assuming no lens distortion)
 dist = np.zeros(5)
+
+# # Load calibration parameters
+# with np.load('calibration_parameters.npz') as X:
+#     mtx, dist = X['mtx'], X['dist']
+
 
 def draw(img, rvec, tvec, mtx, dist):
     # Define the length of the coordinate axes
@@ -67,11 +78,6 @@ def draw(img, rvec, tvec, mtx, dist):
     return img
 
 
-# Define desired width and height
-display_width = 1920  # Full HD resolution width
-display_height = 1080  # Full HD resolution height
-
-
 while True:
     # Capture frame-by-frame
     ret, frame = cap.read()
@@ -87,7 +93,7 @@ while True:
 
     #     # Draw the detections on the original color frame
     for tag in result:
-        # Get the four corners of the tag (##### 2D IMAGE COORDINATES OF THE TAG ####)
+        # Get the four corners of the tag
         corners = tag.corners.astype(int)
 
         # Draw the tag boundary
@@ -96,11 +102,8 @@ while True:
         # Draw tag id
         cv2.putText(frame, str(tag.tag_id), tuple(corners[0]), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
 
-        # Define the model points (in 3D space) of the tag (55mm*55mm is the tag size)
-        # model_points = np.float32([[-2.75, -2.75, 0], [2.75, -2.75, 0], [2.75, 2.75, 0], [-2.75, 2.75, 0]])
-        # 18mm * 18mm
-        model_points = np.float32([[-0.9, -0.9, 0], [0.9, -0.9, 0], [0.9, 0.9, 0], [-0.9, 0.9, 0]])
-
+        # Define the model points (in 3D space) of the tag (assuming it's a 5x5 square)
+        model_points = np.float32([[-2.5, -2.5, 0], [2.5, -2.5, 0], [2.5, 2.5, 0], [-2.5, 2.5, 0]])
 
         # Estimate the tag's pose in the camera frame
         ret, rvec, tvec = cv2.solvePnP(model_points, tag.corners.astype(np.float32).reshape(-1, 2), mtx, dist)
@@ -113,14 +116,11 @@ while True:
 
 
         # axes_img = draw(axes_img, corners, imgpts)
-    
-    # Resize the frame to the desired width and height
-    frame_resized = cv2.resize(frame, (display_width, display_height))
-    axes_img_resized = cv2.resize(axes_img, (display_width, display_height))
+
 
     # Display the resulting frame with detections drawn
-    cv2.imshow('AprilTag Detection', frame_resized)
-    cv2.imshow('AprilTag Axes', axes_img_resized)
+    cv2.imshow('AprilTag Detection', frame)
+    cv2.imshow('AprilTag Axes', axes_img)
 
     # Break the loop on 'q' key press
     if cv2.waitKey(1) & 0xFF == ord('q'):

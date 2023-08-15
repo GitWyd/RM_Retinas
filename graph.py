@@ -1,6 +1,7 @@
 import cv2
 from dt_apriltags import Detector
 import numpy as np
+import matplotlib.pyplot as plt
     
 # ############################## CAMERA INDICE CODE ##############################333
 # def find_all_available_cameras(max_cameras_to_check=10):
@@ -71,6 +72,7 @@ def draw(img, rvec, tvec, mtx, dist):
 display_width = 1920  # Full HD resolution width
 display_height = 1080  # Full HD resolution height
 
+global_poses = {}
 
 while True:
     # Capture frame-by-frame
@@ -111,6 +113,8 @@ while True:
 
         axes_img = draw(frame, rvec, tvec, mtx, dist)
 
+        global_poses[tag.tag_id] = (rvec, tvec)
+
 
         # axes_img = draw(axes_img, corners, imgpts)
     
@@ -129,3 +133,28 @@ while True:
 # After the loop, release the capture and destroy all windows
 cap.release()
 cv2.destroyAllWindows()
+
+# Extract the data for plotting
+tag_ids = list(global_poses.keys())
+x_translations = [global_poses[tag_id][1][0][0] for tag_id in tag_ids]
+y_translations = [global_poses[tag_id][1][1][0] for tag_id in tag_ids]
+z_translations = [global_poses[tag_id][1][2][0] for tag_id in tag_ids]
+
+# Plot the x, y, z translations
+fig, ax = plt.subplots(3, 1, figsize=(10, 15))
+
+ax[0].bar(tag_ids, x_translations, align='center', color='r')
+ax[0].set_title('X Translation for Detected Tags')
+ax[0].set_ylabel('X (mm)')
+
+ax[1].bar(tag_ids, y_translations, align='center', color='g')
+ax[1].set_title('Y Translation for Detected Tags')
+ax[1].set_ylabel('Y (mm)')
+
+ax[2].bar(tag_ids, z_translations, align='center', color='b')
+ax[2].set_title('Z Translation for Detected Tags')
+ax[2].set_xlabel('Tag ID')
+ax[2].set_ylabel('Z (mm)')
+
+plt.tight_layout()
+plt.show()

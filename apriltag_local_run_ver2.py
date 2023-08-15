@@ -29,7 +29,7 @@ dist = np.zeros(5)
 # Visualization and data storage setup
 display_width = 1920
 display_height = 1080
-global_poses = []
+global_poses = {}
 reprojection_errors = []
 
 # Functions
@@ -47,6 +47,7 @@ def draw(img, rvec, tvec, mtx, dist):
 def compute_reprojection_error(observed_corners, reprojected_corners):
     error = np.sum(np.linalg.norm(observed_corners - reprojected_corners, axis=2))
     return error / 4
+
 
 # Main loop
 while True:
@@ -70,17 +71,18 @@ while True:
 
         # Display global pose
         pose_text = f"Global Pose: T=({tvec[0][0]:.2f}, {tvec[1][0]:.2f}, {tvec[2][0]:.2f})"
-        cv2.putText(frame, pose_text, tuple(corners[0] + [0, -20]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2, cv2.LINE_AA)
+        cv2.putText(frame, pose_text, tuple(corners[0] + [0, -30]), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2, cv2.LINE_AA)
         
         # Compute and display reprojection error
         reprojected_corners, _ = cv2.projectPoints(model_points, rvec, tvec, mtx, dist)
         error = compute_reprojection_error(tag.corners, reprojected_corners)
         error_text = f"Error: {error:.2f} px"
-        cv2.putText(frame, error_text, tuple(corners[0] + [0, -40]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2, cv2.LINE_AA)
+        cv2.putText(frame, error_text, tuple(corners[0] + [0, -60]), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
         
         # Store data
-        global_poses.append((tag.tag_id, rvec, tvec))
+        global_poses[tag.tag_id] = tvec.ravel()  
         reprojection_errors.append(error)
+
 
     # Visualization
     frame_resized = cv2.resize(frame, (display_width, display_height))
@@ -92,10 +94,19 @@ while True:
 cap.release()
 cv2.destroyAllWindows()
 
-# Plot reprojection errors
+# Plot global poses
+tag_ids = list(global_poses.keys())
+x_positions = [global_poses[tag_id][0] for tag_id in tag_ids]
+y_positions = [global_poses[tag_id][1] for tag_id in tag_ids]
+z_positions = [global_poses[tag_id][2] for tag_id in tag_ids]
+
 plt.figure()
-plt.bar(range(len(reprojection_errors)), reprojection_errors, align='center')
+plt.bar(tag_ids, x_positions, align='center', label='X Position')
+plt.bar(tag_ids, y_positions, align='center', bottom=x_positions, label='Y Position')
+plt.bar(tag_ids, z_positions, align='center', bottom=np.array(x_positions)+np.array(y_positions), label='Z Position')
 plt.xlabel('Tag ID')
-plt.ylabel('Reprojection Error (px)')
-plt.title('Reprojection Errors for Detected Tags')
+plt.ylabel('Global Position (mm)')
+plt.title('Global Positions for Detected Tags')
+plt.legend()
 plt.show()
+
