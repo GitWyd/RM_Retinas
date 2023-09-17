@@ -1,13 +1,13 @@
-# RM_Retinas
+# Retinas V2
 
 Inspired by the original Retinas repository, Retinas V2 offers enhanced capabilities for AprilTag tracking and pose estimation using OpenCV.
 
 ## Requirements
 
-- python 3.8
-- ubuntu 20.04
+- Ubuntu 20.04
+- Python 3.8
+- AprilTag 3
 - 4K Camera (source code is optimized for processing 4K streams)
-* we used ELP 4KHDR01 USB Camera, but any 4K Camera would suffice
 
 ## Installation
 
@@ -53,3 +53,4 @@ Once calibration is complete, launch the main application:
 ## Notes
 
 - The spatial relationships of the predefined world tags are hardcoded into the script. Kindly modify if your world tag setups are different.
+- we used ELP 4KHDR01 USB Camera, but any 4K Camera would suffice
