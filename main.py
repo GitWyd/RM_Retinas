@@ -1,8 +1,21 @@
+# calculating reprojection error 
+# camera frame to global frame transition (using the world tags)
+
+import os
 import cv2
 from dt_apriltags import Detector
 import numpy as np
 import matplotlib.pyplot as plt
 
+# Detector setup
+detector = Detector
+
+import os
+
+import cv2
+from dt_apriltags import Detector
+import numpy as np
+import matplotlib.pyplot as plt
 
 # Detector setup
 detector = Detector(searchpath=['apriltags'],
@@ -19,17 +32,18 @@ cap = cv2.VideoCapture(0)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 3840)  # Width
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 2160)  # Height
 
-# Camera calibration
-mtx = np.array([
-    [9.53e2, 0, 975],
-    [0, 9.53e2, 550],
-    [0, 0, 1]
-])
-dist = np.zeros(5)
+# Loading Camera Calibration Results
+calib_file = os.path.join("assets/calibration", 'calibration_data.npz')
+if os.path.exists(calib_file):
+    with np.load(calib_file) as X:
+        mtx, dist, rvecs, tvecs = X['mtx'], X['dist'], X['rvecs'], X['tvecs']
+else:
+    print("Calibration data does not exist. Please run calibration.py first")
+    exit()
 
 # Visualization and data storage setup
-display_width = 1920
-display_height = 1080
+# display_width = 1920
+# display_height = 1080
 global_poses = []
 reprojection_errors = []
 
@@ -128,8 +142,9 @@ while True:
         reprojection_errors.append(error)
 
     # Visualization
-    frame_resized = cv2.resize(frame, (display_width, display_height))
-    cv2.imshow('AprilTag Detection', frame_resized)
+    # frame_resized = cv2.resize(frame, (display_width, display_height))
+    # cv2.imshow('AprilTag Detection', frame_resized)
+    cv2.imshow('AprilTag Detection', frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break

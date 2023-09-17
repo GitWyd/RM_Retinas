@@ -2,24 +2,24 @@ import cv2
 from dt_apriltags import Detector
 import numpy as np
     
-# ############################## CAMERA INDICE CODE ##############################333
-# def find_all_available_cameras(max_cameras_to_check=10):
-#     available_cameras = []
-#     for i in range(max_cameras_to_check):
-#         cap = cv2.VideoCapture(i)
-#         if cap is not None and cap.isOpened():
-#             available_cameras.append(i)
-#             cap.release()
-#     return available_cameras
+################# CAMERA INDICE CODE ####################
+def find_all_available_cameras(max_cameras_to_check=10):
+    available_cameras = []
+    for i in range(max_cameras_to_check):
+        cap = cv2.VideoCapture(i)
+        if cap is not None and cap.isOpened():
+            available_cameras.append(i)
+            cap.release()
+    return available_cameras
 
 
-# available_cameras = find_all_available_cameras()
-# if available_cameras:
-#     print(f"Available cameras are at indices {available_cameras}")
-# else:
-#     print("No available cameras  found")
+available_cameras = find_all_available_cameras()
+if available_cameras:
+    print(f"Available cameras are at indices {available_cameras}")
+else:
+    print("No available cameras  found")
 
-###########################################.3##############33
+#########################################################
 
 detector = Detector(searchpath=['apriltags'],
                        families='tag36h11',
