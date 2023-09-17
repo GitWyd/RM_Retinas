@@ -3,9 +3,11 @@
 Inspired by the original Retinas repository, Retinas V2 offers enhanced capabilities for AprilTag tracking and pose estimation using OpenCV.
 
 ## Requirements
-Requirements for the Robot Metabolism Project applies here as well
+
 - python 3.8
 - ubuntu 20.04
+- 4K Camera (source code is optimized for processing 4K streams)
+* we used ELP 4KHDR01 USB Camera, but any 4K Camera would suffice
 
 ## Installation
 
