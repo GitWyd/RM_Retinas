@@ -1,6 +1,11 @@
-# Retinas
+# RM_Retinas
 
 Inspired by the original Retinas repository, Retinas V2 offers enhanced capabilities for AprilTag tracking and pose estimation using OpenCV.
+
+## Requirements
+    Requirements for the Robot Metabolism Project applies here as well
+    - python3.8
+    - ubuntu 20.04
 
 ## Installation
 
@@ -11,6 +16,14 @@ Clone the repository:
 Navigate to the cloned directory:
 
     cd RM_Retinas
+
+Create a virtual environment using Python 3.8:
+
+    python3.8 -m venv venv_name
+
+Activate the virtual environment:
+
+    source venv_name/bin/activate
 
 Install the necessary dependencies:
 
@@ -37,4 +50,4 @@ Once calibration is complete, launch the main application:
 
 ## Notes
 
-    The spatial relationships of the predefined world tags are hardcoded into the script. Kindly modify if your world tag setups are different.
+- The spatial relationships of the predefined world tags are hardcoded into the script. Kindly modify if your world tag setups are different.
