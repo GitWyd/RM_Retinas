@@ -1,4 +1,4 @@
-# RM_Retinas V2
+# Retinas
 
 Inspired by the original Retinas repository, Retinas V2 offers enhanced capabilities for AprilTag tracking and pose estimation using OpenCV.
 
@@ -6,11 +6,11 @@ Inspired by the original Retinas repository, Retinas V2 offers enhanced capabili
 
 Clone the repository:
 
-git clone https://github.com/GitWyd/RM_Retinas.git
+    git clone https://github.com/GitWyd/RM_Retinas.git
 
 Navigate to the cloned directory:
 
-cd RM_Retinas
+    cd RM_Retinas
 
 Install the necessary dependencies:
 
@@ -18,22 +18,20 @@ Install the necessary dependencies:
 
 # Key Features
 
-    AprilTag Detection: Provides real-time detection of AprilTags from a webcam feed.
-    Camera Calibration: Enables calculation of the camera's calibration matrix.
-    Pose Estimation: Determines the 3D pose of each detected tag relative to the camera using OpenCV's solvePnP.
-    World Coordinate Transformation: Transforms detected tag poses to a global coordinate system, as defined by particular "world tags".
-    Visualization: Enhances the video feed by highlighting detected tags, showcasing the tag ID, global pose, and reprojection error.
-    Reprojection Error Calculation: Computes and showcases reprojection errors for all detected tags.
+AprilTag Detection: Provides real-time detection of AprilTags from a webcam feed.
+Camera Calibration: Enables calculation of the camera's calibration matrix.
+Pose Estimation: Determines the 3D pose of each detected tag relative to the camera using OpenCV's solvePnP.
+World Coordinate Transformation: Transforms detected tag poses to a global coordinate system, as defined by particular "world tags".
+Visualization: Enhances the video feed by highlighting detected tags, showcasing the tag ID, global pose, and reprojection error.
+Reprojection Error Calculation: Computes and showcases reprojection errors for all detected tags.
 
 # Usage
 
 Calibrate Your Camera:
 
-
-python src/calibration.py
+    python src/calibration.py
 
 Once calibration is complete, launch the main application:
-
 
     python main.py
 
