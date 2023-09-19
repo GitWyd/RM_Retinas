@@ -56,7 +56,8 @@ cx = mtx[0,2]
 cy = mtx[1,2]
 
 camera_params = (fx, fy, cx, cy)
-tag_size = 0.018
+# tag_size = 0.018
+tag_size = 0.055
 
 # Visualization and data storage setup
 # display_width = 1920
@@ -167,7 +168,7 @@ while True:
     # Visualization
     # frame_resized = cv2.resize(frame, (display_width, display_height))
     # cv2.imshow('AprilTag Detection', frame_resized)
-    cv2.imshow('AprilTag Detection', frame)
+    cv2.imshow('AprilTag Pose Estimation', frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
