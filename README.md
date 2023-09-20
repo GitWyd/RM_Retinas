@@ -53,4 +53,4 @@ Once calibration is complete, launch the main application:
 ## Notes
 
 - The spatial relationships of the predefined world tags are hardcoded into the script. Kindly modify if your world tag setups are different.
-- we used ELP 4KHDR01 USB Camera, but any 4K Camera would suffice
+- ELP 4KHDR01 USB Camera was used, but any 4K Camera would suffice
