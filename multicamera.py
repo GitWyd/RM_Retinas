@@ -76,6 +76,10 @@ cap = cv2.VideoCapture(2)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 3840)  # Width
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 2160)  # Height
 
+# 2nd camera setup
+cap2 = cv2.VideoCapture(4)
+cap2.set(cv2.CAP_PROP_FRAME_WIDTH, 3840)
+cap2.set(cv2.CAP_PROP_FRAME_HEIGHT, 2160)
 
 
 # Loading Camera Calibration Results
@@ -249,15 +253,21 @@ def compute_reprojection_error(tag):
 def main():
     while True:
         ret, frame = cap.read()
-        if not ret:
+        ret2, frame2 = cap2.read()
+
+        if not ret or not ret2:
             break
 
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        gray2 = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
         
         # Detect AprilTags in the frame
         result_world_tags = detector.detect(gray, True, camera_params, world_tag_size)
-
         result_april_tags = detector.detect(gray, True, camera_params, april_tag_size)
+
+        # Detect AprilTags for second camera
+        result_world_tags_cam2 = detector.detect(gray2, True, camera_params, world_tag_size)
+        result_april_tags_cam2 = detector.detect(gray2, True, camera_params, april_tag_size)
 
         R_camera_to_world = None
         t_camera_to_world = None
@@ -269,6 +279,8 @@ def main():
 
         # If we found the origin tag, use its transformation for all tags. 
         # Otherwise, skip world frame computations for this frame.
+        
+        # Cam1 Pose Estimation
         if R_camera_to_world is not None and t_camera_to_world is not None:
             world_tag_counter = 0
             for tag in result_world_tags:
@@ -282,13 +294,36 @@ def main():
                 if tag.tag_id not in WORLD_TAGS:
                     draw_pose(frame, tag, R_camera_to_world, t_camera_to_world, april_tag_size)
 
+        # Cam2 Pose estimation
+        if R_camera_to_world is not None and t_camera_to_world is not None:
+            world_tag_counter_cam2 = 0
+            for tag in result_world_tags_cam2:
+                if tag.tag_id in WORLD_TAGS: 
+                    t_tag_to_world_cam2 = draw_pose(frame2, tag, R_camera_to_world, t_camera_to_world, world_tag_size)
+                    if tag.tag_id is not None:
+                        validate_world_position(tag, t_tag_to_world_cam2, frame2, world_tag_counter_cam2)
+                        world_tag_counter_cam2 += 1
+
+            for tag in result_april_tags_cam2:
+                if tag.tag_id not in WORLD_TAGS:
+                    draw_pose(frame2, tag, R_camera_to_world, t_camera_to_world, april_tag_size)
+
+
+        # Camera 1 Results
         frame_resized = cv2.resize(frame, (display_width, display_height))
         cv2.imshow("AprilTags Pose Estimation", frame_resized)
+
+
+        # Camera 2 Results
+        frame2_resized = cv2.resize(frame2, (display_width, display_height))
+        cv2.imshow("AprilTags Pose Estimation - Camera 2", frame2_resized)
+
 
         if cv2.waitKey(1) & 0xFF == ord('q'):  # Press ESC to exit
             break
 
     cap.release()
+    cap2.release()
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
