@@ -63,6 +63,22 @@ class TagBoundary:
     def draw_text(self, frame, text, position, color=(255, 255, 255), scale=0.7):
         cv2.putText(frame, text, position, cv2.FONT_HERSHEY_SIMPLEX, scale, color, 2, cv2.LINE_AA)
 
+# Should give its pose, where pos = center of the link and orientation = the orientation of the center
+class LinkPose:
+    def init__(self, position, orientation, tag_id, confidence_level):
+        self.position = 
+        self.orientation = 
+        self.tag_id =
+        self.confidence_level = 
+        self.link_num = tag_id%12
+
+
+    def calculate_vertice(self,)
+        
+    
+
+
+
 
 ####################
 ## INITIALIZATION ##
@@ -282,6 +298,27 @@ def main():
                 if tag.tag_id not in WORLD_TAGS:
                     draw_pose(frame, tag, R_camera_to_world, t_camera_to_world, april_tag_size)
 
+                    # add the part for link pose calculation
+                    tag.pose_t # translation of the pose estimate
+                    tag.center # center of the detection in image coordinates
+                    tag.pose_R # rotation matrix of the pose estimate
+                    tag.pose_err # object-space error of the estimation
+                    # logic for storing tag pose data to LinkPose instances
+                        # using tag_id, do tag_id//12 (quotient) to find out the link number
+                        # do tag%12 (remainder), if its the first set of six it's the top tag ids, the rest is bottom tag ids  
+                        # link_[tag//12] = LinkPose()
+                            # DOUBLE DICTIONARY, KEYS = TAG_ID : [KEYS pose_t, poser_R, center : VALUES]]
+                            # link_[tag_id//12].tag = tag.pose_t
+                            # link_[tag_id//12.pose]
+            # now we have all data stored in LinkPose instances named link_[tag_id]
+            # for each of the link P_XX, do the calculations to obtain the center point and the orientation of the link
+                # so for each link_[tag_id//12] there will be a certain number of TAG_IDS that are associated with that link
+                #  
+
+
+            # After all the calculations, draw link pose [pos and orientation and highlight as neon green]
+            draw_link_pose()
+
         frame_resized = cv2.resize(frame, (display_width, display_height))
         cv2.imshow("AprilTags Pose Estimation", frame_resized)
 
@@ -293,4 +330,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
