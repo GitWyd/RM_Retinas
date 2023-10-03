@@ -85,25 +85,8 @@ class TagBoundary:
 
     def draw_text(self, frame, text, position, color=(255, 255, 255), scale=0.7):
         cv2.putText(frame, text, position, cv2.FONT_HERSHEY_SIMPLEX, scale, color, 2, cv2.LINE_AA)
+   
 
-# Should give its pose, where pos = center of the link and orientation = the orientation of the center
-class LinkPose:
-    def __init__(self, tag):
-#                 tag.pose_t # translation of the pose estimate
-#         tag.center # center of the detection in image coordinates
-#         tag.pose_R # rotation matrix of the pose estimate
-#         tag.pose_err # object-space error of the estimation
-# self.position = 
-        self.pose_t = tag.pose_t
-        self.pose_R = tag.pose_R
-        self.center = 
-        self.tag_id = 
-        self.confidence_level = 
-        self.link_num = tag_id % 12
-
-
-    def calculate_vertice(self,)        
-    
 class LinkFrameTags:
     def __init__(self):
         self.tags = {}
@@ -117,11 +100,23 @@ class LinkFrameTags:
         self.tags[link_frame_tag_id] = {
             'pose_t': tag.pose_t,
             'pose_R': tag.pose_R,
-            'center': tag.center
+            'center': tag.center,
+            'pose_err' : tag.pose_err # used for confidence
         }
     
     def get_link_frame_tag_id(self, link_frame_tag_id):
         self.tags.get(link_frame_tag_id, {})
+
+    # this function should calculate the link's pose from the detected apriltags. position of the link is the centroid of the link and the orientation is the orientation of the link
+    def link_pose_estimation(self):
+        for link_frame_tag_id, values in self.tags:
+            # first perform some operation to obtain the centroid of the link from the detected tags, also use LINK_TAGS
+            LINK_TAGS[link_frame_tag_id]
+            # Apply transformation to move from link frame to the world frame
+            # values[pose_t] = (,,)
+            R_link_to_camera = values['pose_R']
+            R_link to world_frame
+
 
 
 
