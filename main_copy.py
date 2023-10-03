@@ -1,6 +1,7 @@
 import os
-import cv2
+from math import sqrt
 import numpy as np
+import cv2
 import dt_apriltags
 
 
@@ -25,6 +26,28 @@ WORLD_TAGS = {
     586: np.array([0.3, 0.3, 0]),
 }
 
+# Define link and the attached 12 apriltags in link frame
+H = 0.010 # 10cm
+R = 0.02 # 2cm
+R_prime = sqrt(3) * R
+
+# Define link tags and their lcoations in link frame
+LINK_TAGS = {
+    # UPPER EDGE TAGS
+    1: [R, 0, H/2],
+    2: [R/2, R_prime/2, H/2],
+    3: [-R/2, R_prime/2, H/2],
+    4: [-R, 0, H/2],
+    5: [-R/2, -R_prime/2, H/2],
+    6: [R/2, -R_prime/2, H/2],
+    # BOTTOM EDGE TAGS
+    7: [R, 0, -H/2],
+    8: [R/2, R_prime/2, -H/2],
+    9: [-R/2, R_prime/2, -H/2],
+    10: [-R, 0, -H/2],
+    11: [-R/2, -R_prime/2, -H/2],
+    12: [R/2, -R_prime/2, -H/2],
+}
 
 world_tag_size = 0.055 # 55mm
 april_tag_size = 0.017
@@ -65,18 +88,40 @@ class TagBoundary:
 
 # Should give its pose, where pos = center of the link and orientation = the orientation of the center
 class LinkPose:
-    def init__(self, position, orientation, tag_id, confidence_level):
-        self.position = 
-        self.orientation = 
-        self.tag_id =
+    def __init__(self, tag):
+#                 tag.pose_t # translation of the pose estimate
+#         tag.center # center of the detection in image coordinates
+#         tag.pose_R # rotation matrix of the pose estimate
+#         tag.pose_err # object-space error of the estimation
+# self.position = 
+        self.pose_t = tag.pose_t
+        self.pose_R = tag.pose_R
+        self.center = 
+        self.tag_id = 
         self.confidence_level = 
-        self.link_num = tag_id%12
+        self.link_num = tag_id % 12
 
 
-    def calculate_vertice(self,)
-        
+    def calculate_vertice(self,)        
     
+class LinkFrameTags:
+    def __init__(self):
+        self.tags = {}
+    
+    def append(self, tag):
+        link_frame_tag_id = tag.tag_id % 12
 
+        if link_frame_tag_id not in self.tags:
+            self.tags[link_frame_tag_id] = {}
+        
+        self.tags[link_frame_tag_id] = {
+            'pose_t': tag.pose_t,
+            'pose_R': tag.pose_R,
+            'center': tag.center
+        }
+    
+    def get_link_frame_tag_id(self, link_frame_tag_id):
+        self.tags.get(link_frame_tag_id, {})
 
 
 
@@ -125,6 +170,20 @@ detector = dt_apriltags.Detector(searchpath=['apriltags'],
                                     debug=0)
 
 visualizer = TagBoundary(mtx, dist)
+
+# link number and related TagPose instances
+# data collection and organization for later compute
+# DATA STRUCTURE
+# link_dict  =  link_number as LinkFrameTags instances
+# these instances have related tags as values{ 'link_number'.tags[link_frame_tag_id] }
+# 17.tags[value between 1 ~ 12] returns a dictionary for that tag
+# 17.tags[1] = {
+#     'pose_t': tag.pose_t,
+#     'pose_R': tag.pose_R,
+#     'center': tag.center
+# }
+
+link_dict = {}
 
 
 #######################
@@ -299,22 +358,26 @@ def main():
                     draw_pose(frame, tag, R_camera_to_world, t_camera_to_world, april_tag_size)
 
                     # add the part for link pose calculation
-                    tag.pose_t # translation of the pose estimate
-                    tag.center # center of the detection in image coordinates
-                    tag.pose_R # rotation matrix of the pose estimate
-                    tag.pose_err # object-space error of the estimation
+                    # tag.pose_t # translation of the pose estimate
+                    # tag.center # center of the detection in image coordinates
+                    # tag.pose_R # rotation matrix of the pose estimate
+                    # tag.pose_err # object-space error of the estimation
                     # logic for storing tag pose data to LinkPose instances
-                        # using tag_id, do tag_id//12 (quotient) to find out the link number
-                        # do tag%12 (remainder), if its the first set of six it's the top tag ids, the rest is bottom tag ids  
-                        # link_[tag//12] = LinkPose()
-                            # DOUBLE DICTIONARY, KEYS = TAG_ID : [KEYS pose_t, poser_R, center : VALUES]]
-                            # link_[tag_id//12].tag = tag.pose_t
-                            # link_[tag_id//12.pose]
-            # now we have all data stored in LinkPose instances named link_[tag_id]
-            # for each of the link P_XX, do the calculations to obtain the center point and the orientation of the link
-                # so for each link_[tag_id//12] there will be a certain number of TAG_IDS that are associated with that link
-                #  
+                    
+                    link_number = tag.tag_id // 12 + 1
+                    link_frame_tag_id = tag.tag_id % 12
+                
+                    if link_number not in link_dict:
+                        link_dict[link_number] = LinkFrameTags()
+                    
+                    link_dict[link_number].append(tag)
+                    link_dict[link_number].get_link_frame_tag_id(link_frame_tag_id)
 
+
+            #
+            # now we have all data stored in link_dict
+            # for LinkTagFrame Instance in link_dict, we must calculate the center and the axes
+            # using the predefined LINK_TAGS
 
             # After all the calculations, draw link pose [pos and orientation and highlight as neon green]
             draw_link_pose()
