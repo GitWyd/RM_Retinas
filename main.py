@@ -3,11 +3,9 @@ import cv2
 import numpy as np
 import dt_apriltags
 
-
 ######################
 ## GLOBAL CONSTANTS ##
 ######################
-
 
 # Define world tags and their locations in world frame
 WORLD_TAGS = {
@@ -25,14 +23,12 @@ WORLD_TAGS = {
     586: np.array([0.3, 0.3, 0]),
 }
 
-
 world_tag_size = 0.055 # 55mm
 april_tag_size = 0.017
 
 #############
 ## CLASSES ##
 #############
-
 
 class TagBoundary:
     def __init__(self, mtx, dist):
@@ -63,11 +59,9 @@ class TagBoundary:
     def draw_text(self, frame, text, position, color=(255, 255, 255), scale=0.7):
         cv2.putText(frame, text, position, cv2.FONT_HERSHEY_SIMPLEX, scale, color, 2, cv2.LINE_AA)
 
-
 ####################
 ## INITIALIZATION ##
 ####################
-
 
 # Video capture setup
 display_width = 1920
@@ -75,8 +69,6 @@ display_height = 1080
 cap = cv2.VideoCapture(2)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 3840)  # Width
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 2160)  # Height
-
-
 
 # Loading Camera Calibration Results
 calib_file = os.path.join("assets/calibration", 'calibration_data.npz')
@@ -110,11 +102,9 @@ detector = dt_apriltags.Detector(searchpath=['apriltags'],
 
 visualizer = TagBoundary(mtx, dist)
 
-
 #######################
 ## UTILITY FUNCTIONS ##
 #######################
-
 
 def draw_pose(frame, tag, R_avg_camera_to_world, t_avg_camera_to_world, tag_size):
     """Draw the tag pose estimation, XYZ coordinate axes, and pose coordinates in the frame."""
@@ -139,7 +129,7 @@ def draw_pose(frame, tag, R_avg_camera_to_world, t_avg_camera_to_world, tag_size
         cv2.line(frame, tuple(img_pts_square[i]), tuple(img_pts_square[(i+1)%4]), (0, 255, 0), 2)
 
     # Define the 3D points for XYZ axes
-    axis_length = 0.05  
+    axis_length = 0.05
     obj_pts_axes = np.array([
         [0, 0, 0],         
         [axis_length, 0, 0],  
