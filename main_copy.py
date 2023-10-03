@@ -87,31 +87,32 @@ class TagBoundary:
         cv2.putText(frame, text, position, cv2.FONT_HERSHEY_SIMPLEX, scale, color, 2, cv2.LINE_AA)
    
 
-class LinkFrameTags:
+class LinkTags:
     def __init__(self):
         self.tags = {}
     
     def append(self, tag):
-        link_frame_tag_id = tag.tag_id % 12
+        # link_tag_id is from 1 to 12
+        link_tag_id = tag.tag_id % 12
 
-        if link_frame_tag_id not in self.tags:
-            self.tags[link_frame_tag_id] = {}
+        if link_tag_id not in self.tags:
+            self.tags[link_tag_id] = {}
         
-        self.tags[link_frame_tag_id] = {
+        self.tags[link_tag_id] = {
             'pose_t': tag.pose_t,
             'pose_R': tag.pose_R,
             'center': tag.center,
             'pose_err' : tag.pose_err # used for confidence
         }
     
-    def get_link_frame_tag_id(self, link_frame_tag_id):
-        self.tags.get(link_frame_tag_id, {})
+    def get_link_tag_id(self, link_tag_id):
+        self.tags.get(link_tag_id, {})
 
     # this function should calculate the link's pose from the detected apriltags. position of the link is the centroid of the link and the orientation is the orientation of the link
     def link_pose_estimation(self):
-        for link_frame_tag_id, values in self.tags:
+        for link_tag_id, values in self.tags:
             # first perform some operation to obtain the centroid of the link from the detected tags, also use LINK_TAGS
-            LINK_TAGS[link_frame_tag_id]
+            LINK_TAGS[link_tag_id]
             # Apply transformation to move from link frame to the world frame
             # values[pose_t] = (,,)
             R_link_to_camera = values['pose_R']
@@ -169,8 +170,8 @@ visualizer = TagBoundary(mtx, dist)
 # link number and related TagPose instances
 # data collection and organization for later compute
 # DATA STRUCTURE
-# link_dict  =  link_number as LinkFrameTags instances
-# these instances have related tags as values{ 'link_number'.tags[link_frame_tag_id] }
+# link_dict  = { link_num : LinkFrameTags instances for the link_num }
+# these instances have related tags as values{ 'link_num'.tags[link_frame_tag_id] }
 # 17.tags[value between 1 ~ 12] returns a dictionary for that tag
 # 17.tags[1] = {
 #     'pose_t': tag.pose_t,
@@ -178,7 +179,7 @@ visualizer = TagBoundary(mtx, dist)
 #     'center': tag.center
 # }
 
-link_dict = {}
+links = {}
 
 
 #######################
@@ -222,7 +223,7 @@ def draw_pose(frame, tag, R_avg_camera_to_world, t_avg_camera_to_world, tag_size
     img_pts_axes = img_pts_axes.reshape(-1, 2).astype(int)
 
     # Draw the transformed XYZ axes on to the Camera Frame
-    colors = [(0, 0, 255), (0, 255, 0), (255, 0, 0)]  
+    colors = [(0, 0, 255), (0, 255, 0), (255, 0, 0)]
     for i in range(1, 4):
         cv2.line(frame, tuple(img_pts_axes[0]), tuple(img_pts_axes[i]), colors[i-1], 2)
 
@@ -234,10 +235,10 @@ def draw_pose(frame, tag, R_avg_camera_to_world, t_avg_camera_to_world, tag_size
         t_tag_to_world = np.dot(R_avg_camera_to_world, tag.pose_t) + t_avg_camera_to_world
 
         print("R_tag_to_world:", R_tag_to_world)
-        print("t_tag_to_world :", t_tag_to_world)    
+        print("t_tag_to_world :", t_tag_to_world)
+
         if np.any(np.isnan(R_tag_to_world)) or np.any(np.isnan(t_tag_to_world)):
             print("Warning: Transformation matrices contain NaN values!")
-
 
         # Project the tag's pose in the world frame onto the image
         img_pts_world, _ = cv2.projectPoints(obj_pts_square, R_tag_to_world, t_tag_to_world, mtx, dist)
@@ -316,6 +317,22 @@ def compute_reprojection_error(tag):
     
     return avg_error
 
+# def link_pose_estimation(links):
+    
+#     for link in links.values():
+#         for link_tag_id, values in link.tags.items():
+            
+#         pos = link.tags[link_tag_id]['pose_t']
+#         link.tags 
+
+
+#     return links_pose
+
+
+# def draw_link_pose(links_pose):
+
+#     return None
+
 def main():
     while True:
         ret, frame = cap.read()
@@ -352,27 +369,26 @@ def main():
                 if tag.tag_id not in WORLD_TAGS:
                     draw_pose(frame, tag, R_camera_to_world, t_camera_to_world, april_tag_size)
 
-                    # add the part for link pose calculation
                     # tag.pose_t # translation of the pose estimate
                     # tag.center # center of the detection in image coordinates
                     # tag.pose_R # rotation matrix of the pose estimate
                     # tag.pose_err # object-space error of the estimation
                     # logic for storing tag pose data to LinkPose instances
                     
-                    link_number = tag.tag_id // 12 + 1
-                    link_frame_tag_id = tag.tag_id % 12
+                    link_num = tag.tag_id // 12 + 1
+                    link_tag_id = tag.tag_id % 12
                 
-                    if link_number not in link_dict:
-                        link_dict[link_number] = LinkFrameTags()
+                    if link_num not in links:
+                        links[link_num] = LinkTags()
                     
-                    link_dict[link_number].append(tag)
-                    link_dict[link_number].get_link_frame_tag_id(link_frame_tag_id)
+                    links[link_num].append(tag)
+                    # links[link_num].get_link_tag_id(link_tag_id)
 
 
-            #
-            # now we have all data stored in link_dict
-            # for LinkTagFrame Instance in link_dict, we must calculate the center and the axes
+            # now we have all data stored in links
+            # for LinkTags Instance in links, we must calculate the center and the axes
             # using the predefined LINK_TAGS
+            links_pose = link_pose_estimation(links)
 
             # After all the calculations, draw link pose [pos and orientation and highlight as neon green]
             draw_link_pose()
