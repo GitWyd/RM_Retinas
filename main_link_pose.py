@@ -109,14 +109,40 @@ class LinkTags:
         self.tags.get(link_tag_id, {})
 
     # this function should calculate the link's pose from the detected apriltags. position of the link is the centroid of the link and the orientation is the orientation of the link
-    def link_pose_estimation(self):
-        for link_tag_id, values in self.tags:
+    def pose_estimation(self):
+
+        for link_tag_id, link_tag in self.tags.items():
+            # Get link frame tag position
+            link_frame_tag_position = LINK_TAGS[link_tag_id]
+            
+            # Get pose of the tag in camera frame
+            t_link_to_camera = link_tag['pose_t']
+            R_link_to_camera = link_tag['pose_R']
+            
+            # Transform the tag's position from link frame to camera frame
+            t_link = np.dot(R_link_to_camera, link_frame_tag_position) + t_link_to_camera
+            
+            
+            center = link_tag['center']
+            pose_err = link_tag['pose_err']
+        
+
+
+
             # first perform some operation to obtain the centroid of the link from the detected tags, also use LINK_TAGS
-            LINK_TAGS[link_tag_id]
             # Apply transformation to move from link frame to the world frame
             # values[pose_t] = (,,)
-            R_link_to_camera = values['pose_R']
-            R_link to world_frame
+            
+#     for link in links.values():
+#         for link_tag_id, values in link.tags.items():
+            
+#         pos = link.tags[link_tag_id]['pose_t']
+#         link.tags 
+
+    def draw_pose(link_pose):
+
+
+        return None
 
 
 
@@ -317,21 +343,6 @@ def compute_reprojection_error(tag):
     
     return avg_error
 
-# def link_pose_estimation(links):
-    
-#     for link in links.values():
-#         for link_tag_id, values in link.tags.items():
-            
-#         pos = link.tags[link_tag_id]['pose_t']
-#         link.tags 
-
-
-#     return links_pose
-
-
-# def draw_link_pose(links_pose):
-
-#     return None
 
 def main():
     while True:
@@ -384,14 +395,17 @@ def main():
                     links[link_num].append(tag)
                     # links[link_num].get_link_tag_id(link_tag_id)
 
+            for link in links.values():
+                link_pose = link.pose_estimation()
+                link.draw_pose(link_pose)
 
             # now we have all data stored in links
             # for LinkTags Instance in links, we must calculate the center and the axes
             # using the predefined LINK_TAGS
-            links_pose = link_pose_estimation(links)
+            # links_pose = link_pose_estimation(links)
 
             # After all the calculations, draw link pose [pos and orientation and highlight as neon green]
-            draw_link_pose()
+            # draw_link_pose()
 
         frame_resized = cv2.resize(frame, (display_width, display_height))
         cv2.imshow("AprilTags Pose Estimation", frame_resized)
