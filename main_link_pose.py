@@ -1,11 +1,14 @@
 import os
-import cv2
+from math import sqrt
 import numpy as np
+import cv2
 import dt_apriltags
+
 
 ######################
 ## GLOBAL CONSTANTS ##
 ######################
+
 
 # Define world tags and their locations in world frame
 WORLD_TAGS = {
@@ -23,6 +26,31 @@ WORLD_TAGS = {
     586: np.array([0.3, 0.3, 0]),
 }
 
+# Define link and the attached 12 apriltags in link frame
+H = 0.010 # 10cm
+R = 0.02 # 2cm
+R_prime = sqrt(3) * R
+
+# Define link tags and their lcoations in link frame
+# LINK_TAGS = {
+#     # UPPER EDGE TAGS
+#     1: [R, 0, H/2],
+#     2: [R/2, R_prime/2, H/2],
+#     3: [-R/2, R_prime/2, H/2],
+#     4: [-R, 0, H/2],
+#     5: [-R/2, -R_prime/2, H/2],
+#     6: [R/2, -R_prime/2, H/2],
+#     # BOTTOM EDGE TAGS
+#     7: [R, 0, -H/2],
+#     8: [R/2, R_prime/2, -H/2],
+#     9: [-R/2, R_prime/2, -H/2],
+#     10: [-R, 0, -H/2],
+#     11: [-R/2, -R_prime/2, -H/2],
+#     12: [R/2, -R_prime/2, -H/2],
+# }
+
+
+
 world_tag_size = 0.055 # 55mm
 april_tag_size = 0.017
 
@@ -30,19 +58,23 @@ april_tag_size = 0.017
 ## CLASSES ##
 #############
 
+
 class TagBoundary:
     def __init__(self, mtx, dist):
         self.mtx = mtx
         self.dist = dist
     
+    @staticmethod
     def draw_boundary(self, frame, corners, color = (255, 0, 0), thickness = 4):
         corners_int = corners.astype(int)
         cv2.polylines(frame, [corners,int], True, color, thickness)
     
+    @staticmethod
     def project_points(self, obj_pts, R, t):
         img_pts, _ = cv2.projectPoints(obj_pts, R, t, self.mtx, self.dist)
         return img_pts.reshape(-1, 2).astype(int)
     
+    @staticmethod
     def draw_axes(self, frame, R, t, axis_length = 0.05):
         obj_pts_axes = np.array([
             [0, 0, 0],         
@@ -58,10 +90,74 @@ class TagBoundary:
 
     def draw_text(self, frame, text, position, color=(255, 255, 255), scale=0.7):
         cv2.putText(frame, text, position, cv2.FONT_HERSHEY_SIMPLEX, scale, color, 2, cv2.LINE_AA)
+   
+
+class LinkTags:
+    def __init__(self):
+        self.tags = {}
+    
+    def append(self, tag):
+        # link_tag_id is from 1 to 12
+        link_tag_id = tag.tag_id % 12
+        # link_id : 14
+        # tag_id : link_id*12 + 11
+
+        if link_tag_id not in self.tags:
+            self.tags[link_tag_id] = {}
+        
+        self.tags[link_tag_id] = {
+            'pose_t': tag.pose_t,
+            'pose_R': tag.pose_R,
+            'center': tag.center,
+            'pose_err' : tag.pose_err # used for confidence
+        }
+    
+    def get_link_tag_id(self, link_tag_id):
+        self.tags.get(link_tag_id, {})
+
+    # this function should calculate the link's pose from the detected apriltags. position of the link is the centroid of the link and the orientation is the orientation of the link
+    def pose_estimation(self):
+
+        for link_tag_id, link_tag in self.tags.items():
+            # Get link frame tag position
+            link_frame_tag_position = LINK_TAGS[link_tag_id]
+            
+            # Get pose of the tag in camera frame
+            t_link_to_camera = link_tag['pose_t']
+            R_link_to_camera = link_tag['pose_R']
+            
+            # Transform the tag's position from link frame to camera frame
+            t_link = np.dot(R_link_to_camera, link_frame_tag_position) + t_link_to_camera
+            
+            
+            center = link_tag['center']
+            pose_err = link_tag['pose_err']
+        
+
+
+
+            # first perform some operation to obtain the centroid of the link from the detected tags, also use LINK_TAGS
+            # Apply transformation to move from link frame to the world frame
+            # values[pose_t] = (,,)
+            
+#     for link in links.values():
+#         for link_tag_id, values in link.tags.items():
+            
+#         pos = link.tags[link_tag_id]['pose_t']
+#         link.tags 
+
+    def draw_pose(link_pose):
+
+
+        return None
+
+
+
 
 ####################
 ## INITIALIZATION ##
 ####################
+
 
 # Video capture setup
 display_width = 1920
@@ -69,6 +165,8 @@ display_height = 1080
 cap = cv2.VideoCapture(2)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 3840)  # Width
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 2160)  # Height
+
+
 
 # Loading Camera Calibration Results
 calib_file = os.path.join("assets/calibration", 'calibration_data.npz')
@@ -102,9 +200,27 @@ detector = dt_apriltags.Detector(searchpath=['apriltags'],
 
 visualizer = TagBoundary(mtx, dist)
 
+# link number and related TagPose instances
+# data collection and organization for later compute
+# DATA STRUCTURE
+# links  = { link_num : LinkFrameTags instances for the link_num }
+# these instances have related tags as values{ 'link_num'.tags[link_frame_tag_id] }
+# 17.tags[value between 1 ~ 12] returns a dictionary for that tag
+# 17.tags[1] = {
+#     'pose_t': tag.pose_t,
+#     'pose_R': tag.pose_R,
+#     'center': tag.center
+# }
+
+links = {}
+
+
 #######################
 ## UTILITY FUNCTIONS ##
 #######################
+
+
+def centroid_estimation()
 
 def draw_pose(frame, tag, R_avg_camera_to_world, t_avg_camera_to_world, tag_size):
     """Draw the tag pose estimation, XYZ coordinate axes, and pose coordinates in the frame."""
@@ -118,7 +234,8 @@ def draw_pose(frame, tag, R_avg_camera_to_world, t_avg_camera_to_world, tag_size
         [-tag_size/2, -tag_size/2, 0],
         [ tag_size/2, -tag_size/2, 0],
         [ tag_size/2,  tag_size/2, 0],
-        [-tag_size/2,  tag_size/2, 0]
+        [-tag_size/2,  tag_size/2, 0],
+
     ])
 
     # Tag Frame to Camera Frame Transformation for Corners
@@ -129,7 +246,7 @@ def draw_pose(frame, tag, R_avg_camera_to_world, t_avg_camera_to_world, tag_size
         cv2.line(frame, tuple(img_pts_square[i]), tuple(img_pts_square[(i+1)%4]), (0, 255, 0), 2)
 
     # Define the 3D points for XYZ axes
-    axis_length = 0.05
+    axis_length = 0.05  
     obj_pts_axes = np.array([
         [0, 0, 0],         
         [axis_length, 0, 0],  
@@ -142,7 +259,7 @@ def draw_pose(frame, tag, R_avg_camera_to_world, t_avg_camera_to_world, tag_size
     img_pts_axes = img_pts_axes.reshape(-1, 2).astype(int)
 
     # Draw the transformed XYZ axes on to the Camera Frame
-    colors = [(0, 0, 255), (0, 255, 0), (255, 0, 0)]  
+    colors = [(0, 0, 255), (0, 255, 0), (255, 0, 0)]
     for i in range(1, 4):
         cv2.line(frame, tuple(img_pts_axes[0]), tuple(img_pts_axes[i]), colors[i-1], 2)
 
@@ -154,10 +271,10 @@ def draw_pose(frame, tag, R_avg_camera_to_world, t_avg_camera_to_world, tag_size
         t_tag_to_world = np.dot(R_avg_camera_to_world, tag.pose_t) + t_avg_camera_to_world
 
         print("R_tag_to_world:", R_tag_to_world)
-        print("t_tag_to_world :", t_tag_to_world)    
+        print("t_tag_to_world :", t_tag_to_world)
+
         if np.any(np.isnan(R_tag_to_world)) or np.any(np.isnan(t_tag_to_world)):
             print("Warning: Transformation matrices contain NaN values!")
-
 
         # Project the tag's pose in the world frame onto the image
         img_pts_world, _ = cv2.projectPoints(obj_pts_square, R_tag_to_world, t_tag_to_world, mtx, dist)
@@ -236,6 +353,7 @@ def compute_reprojection_error(tag):
     
     return avg_error
 
+
 def main():
     while True:
         ret, frame = cap.read()
@@ -272,6 +390,33 @@ def main():
                 if tag.tag_id not in WORLD_TAGS:
                     draw_pose(frame, tag, R_camera_to_world, t_camera_to_world, april_tag_size)
 
+                    # tag.pose_t # translation of the pose estimate
+                    # tag.center # center of the detection in image coordinates
+                    # tag.pose_R # rotation matrix of the pose estimate
+                    # tag.pose_err # object-space error of the estimation
+                    # logic for storing tag pose data to LinkPose instances
+                    
+                    link_num = tag.tag_id // 12 + 1
+                    link_tag_id = tag.tag_id % 12
+                
+                    if link_num not in links:
+                        links[link_num] = LinkTags()
+                    
+                    links[link_num].append(tag)
+                    # links[link_num].get_link_tag_id(link_tag_id)
+
+            for link in links.values():
+                link_pose = link.pose_estimation()
+                link.draw_pose(link_pose)
+
+            # now we have all data stored in links
+            # for LinkTags Instance in links, we must calculate the center and the axes
+            # using the predefined LINK_TAGS
+            # links_pose = link_pose_estimation(links)
+
+            # After all the calculations, draw link pose [pos and orientation and highlight as neon green]
+            # draw_link_pose()
+
         frame_resized = cv2.resize(frame, (display_width, display_height))
         cv2.imshow("AprilTags Pose Estimation", frame_resized)
 
@@ -283,4 +428,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
