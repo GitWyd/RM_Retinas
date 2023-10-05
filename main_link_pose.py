@@ -32,22 +32,24 @@ R = 0.02 # 2cm
 R_prime = sqrt(3) * R
 
 # Define link tags and their lcoations in link frame
-LINK_TAGS = {
-    # UPPER EDGE TAGS
-    1: [R, 0, H/2],
-    2: [R/2, R_prime/2, H/2],
-    3: [-R/2, R_prime/2, H/2],
-    4: [-R, 0, H/2],
-    5: [-R/2, -R_prime/2, H/2],
-    6: [R/2, -R_prime/2, H/2],
-    # BOTTOM EDGE TAGS
-    7: [R, 0, -H/2],
-    8: [R/2, R_prime/2, -H/2],
-    9: [-R/2, R_prime/2, -H/2],
-    10: [-R, 0, -H/2],
-    11: [-R/2, -R_prime/2, -H/2],
-    12: [R/2, -R_prime/2, -H/2],
-}
+# LINK_TAGS = {
+#     # UPPER EDGE TAGS
+#     1: [R, 0, H/2],
+#     2: [R/2, R_prime/2, H/2],
+#     3: [-R/2, R_prime/2, H/2],
+#     4: [-R, 0, H/2],
+#     5: [-R/2, -R_prime/2, H/2],
+#     6: [R/2, -R_prime/2, H/2],
+#     # BOTTOM EDGE TAGS
+#     7: [R, 0, -H/2],
+#     8: [R/2, R_prime/2, -H/2],
+#     9: [-R/2, R_prime/2, -H/2],
+#     10: [-R, 0, -H/2],
+#     11: [-R/2, -R_prime/2, -H/2],
+#     12: [R/2, -R_prime/2, -H/2],
+# }
+
+
 
 world_tag_size = 0.055 # 55mm
 april_tag_size = 0.017
@@ -62,14 +64,17 @@ class TagBoundary:
         self.mtx = mtx
         self.dist = dist
     
+    @staticmethod
     def draw_boundary(self, frame, corners, color = (255, 0, 0), thickness = 4):
         corners_int = corners.astype(int)
         cv2.polylines(frame, [corners,int], True, color, thickness)
     
+    @staticmethod
     def project_points(self, obj_pts, R, t):
         img_pts, _ = cv2.projectPoints(obj_pts, R, t, self.mtx, self.dist)
         return img_pts.reshape(-1, 2).astype(int)
     
+    @staticmethod
     def draw_axes(self, frame, R, t, axis_length = 0.05):
         obj_pts_axes = np.array([
             [0, 0, 0],         
@@ -94,6 +99,8 @@ class LinkTags:
     def append(self, tag):
         # link_tag_id is from 1 to 12
         link_tag_id = tag.tag_id % 12
+        # link_id : 14
+        # tag_id : link_id*12 + 11
 
         if link_tag_id not in self.tags:
             self.tags[link_tag_id] = {}
@@ -196,7 +203,7 @@ visualizer = TagBoundary(mtx, dist)
 # link number and related TagPose instances
 # data collection and organization for later compute
 # DATA STRUCTURE
-# link_dict  = { link_num : LinkFrameTags instances for the link_num }
+# links  = { link_num : LinkFrameTags instances for the link_num }
 # these instances have related tags as values{ 'link_num'.tags[link_frame_tag_id] }
 # 17.tags[value between 1 ~ 12] returns a dictionary for that tag
 # 17.tags[1] = {
@@ -213,6 +220,8 @@ links = {}
 #######################
 
 
+def centroid_estimation()
+
 def draw_pose(frame, tag, R_avg_camera_to_world, t_avg_camera_to_world, tag_size):
     """Draw the tag pose estimation, XYZ coordinate axes, and pose coordinates in the frame."""
     corners = tag.corners.astype(int)
@@ -225,7 +234,8 @@ def draw_pose(frame, tag, R_avg_camera_to_world, t_avg_camera_to_world, tag_size
         [-tag_size/2, -tag_size/2, 0],
         [ tag_size/2, -tag_size/2, 0],
         [ tag_size/2,  tag_size/2, 0],
-        [-tag_size/2,  tag_size/2, 0]
+        [-tag_size/2,  tag_size/2, 0],
+
     ])
 
     # Tag Frame to Camera Frame Transformation for Corners
