@@ -200,13 +200,13 @@ class Tag:
             tip_str = f"Tip: X: {tip_world[0]*100:.1f}, Y: {tip_world[1]*100:.1f}, Z: {tip_world[2]*100:.1f}"
 
             # centroid and tip points in camera frame
-            centroid_camera = cf_linkbody_pts[0]
-            tip_camera = cf_linkbody_pts[1]
+            cf_centroid = cf_linkbody_pts[0]
+            cf_tip = cf_linkbody_pts[1]
 
             # display world coordinates on the camera frame cordinates (since our view is in camera frame)
             offset_y = 20  # vertical offset for text placement
-            cv2.putText(self.frame, centroid_str, (centroid_camera[0] - 60, centroid_camera[1] - offset_y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2, cv2.LINE_AA)
-            cv2.putText(self.frame, tip_str, (tip_camera[0] - 60, tip_camera[1] - offset_y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2, cv2.LINE_AA)
+            cv2.putText(self.frame, centroid_str, (cf_centroid[0] - 60, cf_centroid[1] - offset_y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2, cv2.LINE_AA)
+            cv2.putText(self.frame, tip_str, (cf_tip[0] - 60, cf_tip[1] - offset_y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2, cv2.LINE_AA)
         
         # Set a static offset for the text, e.g., 10 pixels above the tag center.
         cf_tag_center = np.mean(cf_tag_corners, axis=0).astype(int)
@@ -219,13 +219,14 @@ class Tag:
         #####################################################
         # HAVE TO ADD PART FOR TAG TO WORLD FOR THE CENTROID AND TIP POINTS AS WELL ALSO FOR X - AXES####
         #####################################################
-        return None
+        return 
 
    
 
 class LinkTags:
     def __init__(self):
         self.tags = {}
+        self.tags[link_tag_id][centroid] = #centroid value
     
     def append(self, tag):
         # link_tag_id is from 1 to 12
@@ -433,6 +434,16 @@ def main():
                     link_num = tag.tag_id // 12 # Link Number starts with P0
                     link_tag_id = tag.tag_id % 12
                     
+                    # logic for storing tag pose data to LinkPose instances
+                    if link_num not in links:
+                        links[link_num] = LinkTags()
+                    
+                    links[link_num].append(tag)
+                    # links[link_num].get_link_tag_id(link_tag_id)
+
+
+
+
                     detected_tag = Tag(frame, tag, R_camera_to_world, t_camera_to_world, april_tag_size)
                     # detected_tag.draw_original_boundary()
                     cf_tag_corners = detected_tag.draw_tag_boundary()
@@ -441,13 +452,6 @@ def main():
 
                     R_tag_to_world, t_tag_to_world = detected_tag.compute_tranformation()
                     detected_tag.project_to_world(R_tag_to_world, t_tag_to_world, cf_tag_corners, cf_linkbody_pts, link_tag_id)
-
-                    # logic for storing tag pose data to LinkPose instances
-                    if link_num not in links:
-                        links[link_num] = LinkTags()
-                    
-                    links[link_num].append(tag)
-                    # links[link_num].get_link_tag_id(link_tag_id)
 
             # this part is reserved for TRIANGLE POSE AND ESTIMATION
             # for link in links.values():
