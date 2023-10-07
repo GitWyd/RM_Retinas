@@ -3,7 +3,7 @@ from math import sqrt
 import numpy as np
 import cv2
 import dt_apriltags
-
+import pandas as pd
 
 ######################
 ## GLOBAL CONSTANTS ##
@@ -87,7 +87,6 @@ class Tag:
     #     # Draw detected corners without transformation for comparison
     #     corners = self.tag.corners.astype(int)
     #     cv2.polylines(self.frame, [corners], True, (0,255,0), 2)
-
     #     return None
     
     def draw_tag_boundary(self):
@@ -216,18 +215,58 @@ class Tag:
         world_pos_str = f"X: {(t_tag_to_world[0][0])*100:.1f}, Y: {(t_tag_to_world[1][0])*100:.1f}, Z: {(t_tag_to_world[2][0])*100:.1f}"
         cv2.putText(self.frame, world_pos_str, (cf_tag_center[0] - 60, cf_tag_center[1] - text_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2, cv2.LINE_AA)
 
+        
+
+
         #####################################################
         # HAVE TO ADD PART FOR TAG TO WORLD FOR THE CENTROID AND TIP POINTS AS WELL ALSO FOR X - AXES####
         #####################################################
-        return 
+        return centroid_world, tip_world # will be adding in the the link instance
 
    
 
-class LinkTags:
+class LinkBody:
     def __init__(self):
         self.tags = {}
-        self.tags[link_tag_id][centroid] = #centroid value
-    
+        # self.tags[link_tag_id][centroid] = #centroid value
+        columns = ['link_tag_id', 'centroid_x', 'centroid_y', 'centroid_z',
+                   'upper_tip_x', 'upper_tip_y', 'upper_tip_z',
+                   'bottom_tip_x', 'bottom_tip_y', 'bottom_tip_z']
+        
+        # initialize dataframe to collect link centroid, tip, axes data
+        self.data = pd.DataFrame(columns=columns)
+
+    def update_data(self, link_tag_id, centroid, tip):
+        # determine tip type
+        if 0 <= link_tag_id <= 5:
+            tip_type = 'upper_tip'
+        else:
+            tip_type = 'bottom_tip'
+        
+        new_data = {
+            'link_tag_id': link_tag_id,
+            'centroid_x': centroid[0], 'centroid_y': centroid[1], 'centroid_z': centroid[2],
+            tip_type+'_x': tip[0], tip_type+'_y': tip[1], tip_type+'_z': tip[2]
+        }
+
+        self.data = self.data.append(new_data, ignore_index = True)
+
+    def compute_mean(self):
+        mean_values = {
+            'link_tag_id' : 'Mean',
+            'centroid_x': self.data['centroid_x'].mean(),
+            'centroid_y': self.data['centroid_y'].mean(),
+            'centroid_z': self.data['centroid_z'].mean(),
+            'upper_tip_x': self.data['upper_tip_x'].mean(),
+            'upper_tip_y': self.data['upper_tip_y'].mean(),
+            'upper_tip_z': self.data['upper_tip_z'].mean(),
+            'bottom_tip_x': self.data['bottom_tip_x'].mean(),
+            'bottom_tip_y': self.data['bottom_tip_y'].mean(),
+            'bottom_tip_z': self.data['bottom_tip_z'].mean()
+        }
+        self.data.append(mean_values, ignore_index = True)
+            
+
     def append(self, tag):
         # link_tag_id is from 1 to 12
         link_tag_id = tag.tag_id % 12
@@ -409,6 +448,7 @@ def main():
             # If the detected tag is the origin (tag ID 575), use its transformation as the world frame  
             if tag.tag_id == 575:
                     R_camera_to_world, t_camera_to_world = get_camera_to_world_transform(tag)
+                    R_world_to_camera, t_world_to_camera = tag.pose_R, tag.pose_t
 
         # If we found the world tag, use its transformation for all other tags. 
         # Otherwise, skip world frame computations for this frame.
@@ -427,7 +467,10 @@ def main():
                     if tag.tag_id is not None:
                         validate_world_position(tag, t_tag_to_world, frame, world_tag_counter)
                         world_tag_counter += 1
-            
+
+
+
+
             for tag in result_april_tags:
                 if tag.tag_id not in WORLD_TAGS:
                     
@@ -436,11 +479,12 @@ def main():
                     
                     # logic for storing tag pose data to LinkPose instances
                     if link_num not in links:
-                        links[link_num] = LinkTags()
+                        links[link_num] = LinkBody()
                     
                     links[link_num].append(tag)
                     # links[link_num].get_link_tag_id(link_tag_id)
 
+                    
 
 
 
@@ -451,7 +495,30 @@ def main():
                     cf_linkbody_pts = detected_tag.draw_linkbody(link_tag_id)
 
                     R_tag_to_world, t_tag_to_world = detected_tag.compute_tranformation()
-                    detected_tag.project_to_world(R_tag_to_world, t_tag_to_world, cf_tag_corners, cf_linkbody_pts, link_tag_id)
+                    centroid, tip = detected_tag.project_to_world(R_tag_to_world, t_tag_to_world, cf_tag_corners, cf_linkbody_pts, link_tag_id)
+                    links[link_num].update_data(link_tag_id, centroid, tip)
+
+            for link_body in links.values():
+                link_body.compute_mean()
+
+                # TO DISPLAY THE MEAN LINKBODY PTS IN THE CF
+                
+                a = wf_centroid, wf_upper_tip, wf_bottom_tip
+                # cf_linkbody_mean = np.dot(R_world_to_camera, a) + t_world_to_camera
+                cf_linkbody_mean, _ = cv2.projectPoints(a, R_world_to_camera, t_world_to_camera, mtx, dist)
+                cf_linkbody_mean = cf_linkbody_mean.reshape(-1, 2).astype(int)
+
+                for pt in cf_linkbody_mean:
+                    neon_green = (57, 255, 20)
+                    # Draw the transformed centroid and tips! as a circle
+                    cv2.circle(frame, tuple(pt), 5, neon_green, -1)
+
+
+            # so link_body.data is in wf -> i need it back in the cf to project it on the 
+
+            # now i need to display link_body in cf  and project it 
+
+
 
             # this part is reserved for TRIANGLE POSE AND ESTIMATION
             # for link in links.values():
