@@ -43,7 +43,7 @@ obj_pts_square = np.array([
     [ april_tag_size/2,  april_tag_size/2, 0],
 ])
 
-columns = ['link_tag_id', 'centroid_x', 'centroid_y', 'centroid_z',
+columns = ['link_num', 'link_tag_id', 'centroid_x', 'centroid_y', 'centroid_z',
                    'upper_tip_x', 'upper_tip_y', 'upper_tip_z',
                    'bottom_tip_x', 'bottom_tip_y', 'bottom_tip_z']
 
@@ -227,9 +227,6 @@ class LinkBody:
         self.tags = {}
         self.frame = frame
         # self.tags[link_tag_id][centroid] = #centroid value
-        # columns = ['link_tag_id', 'centroid_x', 'centroid_y', 'centroid_z',
-        #            'upper_tip_x', 'upper_tip_y', 'upper_tip_z',
-        #            'bottom_tip_x', 'bottom_tip_y', 'bottom_tip_z']
         
         # initialize dataframe to collect link centroid, tip, axes data
         self.data = pd.DataFrame(columns=columns)
@@ -312,12 +309,23 @@ class LinkBody:
         wf_linkbody_mean = np.array([wf_centroid, wf_upper_tip, wf_bottom_tip], dtype = np.float32)
         # cf_linkbody_mean = np.dot(R_world_to_camera, a) + t_world_to_camera
         cf_linkbody_mean, _ = cv2.projectPoints(wf_linkbody_mean, R_world_to_camera, t_world_to_camera, mtx, dist)
-        cf_linkbody_mean = cf_linkbody_mean.reshape(-1, 2).astype(int)
+        print(f"cf_linkbody_mean{cf_linkbody_mean}")
+        # cf_linkbody_mean = cf_linkbody_mean.reshape(-1, 2).astype(int)
+        cf_linkbody_reshaped = cf_linkbody_mean.reshape(-1, 2)
+        mask = ~np.isnan(cf_linkbody_reshaped).any(axis=1)
+        cf_linkbody_reshaped[mask] = cf_linkbody_reshaped[mask].astype(int) # convert to integer
+        print(f"cf_linkbody_mean{cf_linkbody_reshaped}")
+
 
         neon_green = (57, 255, 20)
 
-        for pt in cf_linkbody_mean:
-            cv2.circle(self.frame, tuple(pt), 5, neon_green, -1)
+        for pt in cf_linkbody_reshaped[mask]:
+            # print(pt)
+            if not np.isnan(np.array(pt)).any(): # skip
+                # print(tuple(pt))
+                # cv2.circle(self.frame, tuple(pt), 5, neon_green, -1)
+                cv2.circle(self.frame, center=(int(pt[0]), int(pt[1])), radius=5, color=neon_green, thickness=-1)
+
         # print(cf_linkbody_mean)
         # for pt in cf_linkbody_mean:
         #     print(pt)
@@ -412,8 +420,6 @@ detector = dt_apriltags.Detector(searchpath=['apriltags'],
 #     'center': tag.center
 # }
 
-links = {}
-
 
 #######################
 ## UTILITY FUNCTIONS ##
@@ -469,6 +475,8 @@ def main():
         ret, frame = cap.read()
         if not ret:
             break
+        
+        links = {}
 
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         
