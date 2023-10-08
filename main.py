@@ -286,6 +286,30 @@ class LinkBody:
     def get_link_tag_id(self, link_tag_id):
         self.tags.get(link_tag_id, {})
 
+    def display_linkbody(self, R_world_to_camera, t_world_to_camera):
+
+        # TO DISPLAY THE MEAN LINKBODY PTS IN THE CF
+        mean_row = self.data[[self.data['link_tag_id'] == "Mean"]].iloc[0]
+        wf_centroid = (mean_row['centroid_x'], mean_row['centroid_y'], mean_row['centroid_z'])
+        wf_upper_tip = (mean_row['upper_tip_x'], mean_row['upper_tip_y'], mean_row['upper_tip_z'])
+        wf_bottom_tip = (mean_row['bottom_tip_x'], mean_row['bottom_tip_y'], mean_row['bottom_tip_z'])
+        
+        wf_centroid = (mean_row['centroid_x'], mean_row['centroid_y'], mean_row['centroid_z'])
+        wf_upper_tip = (mean_row['upper_tip_x'], mean_row['upper_tip_y'], mean_row['upper_tip_z'])
+        wf_bottom_tip = (mean_row['bottom_tip_x'], mean_row['bottom_tip_y'], mean_row['bottom_tip_z'])
+        
+        wf_linkbody_mean = np.array([wf_centroid, wf_upper_tip, wf_bottom_tip], dtype = np.float32)
+        # cf_linkbody_mean = np.dot(R_world_to_camera, a) + t_world_to_camera
+        cf_linkbody_mean, _ = cv2.projectPoints(wf_linkbody_mean, R_world_to_camera, t_world_to_camera, mtx, dist)
+        cf_linkbody_mean = cf_linkbody_mean.reshape(-1, 2).astype(int)
+
+        neon_green = (57, 255, 20)
+        
+        for pt in cf_linkbody_mean:
+            # Draw the transformed centroid and tips! as a circle
+            cv2.circle(frame, tuple(pt), 5, neon_green, -1)
+
+
     # this function should calculate the link's pose from the detected apriltags. position of the link is the centroid of the link and the orientation is the orientation of the link
     def pose_estimation(self):
 
@@ -484,9 +508,7 @@ def main():
                     links[link_num].append(tag)
                     # links[link_num].get_link_tag_id(link_tag_id)
 
-                    
-
-
+                     
 
                     detected_tag = Tag(frame, tag, R_camera_to_world, t_camera_to_world, april_tag_size)
                     # detected_tag.draw_original_boundary()
@@ -499,25 +521,10 @@ def main():
                     links[link_num].update_data(link_tag_id, centroid, tip)
 
             for link_body in links.values():
-                link_body.compute_mean()
-
-                # TO DISPLAY THE MEAN LINKBODY PTS IN THE CF
                 
-                a = wf_centroid, wf_upper_tip, wf_bottom_tip
-                # cf_linkbody_mean = np.dot(R_world_to_camera, a) + t_world_to_camera
-                cf_linkbody_mean, _ = cv2.projectPoints(a, R_world_to_camera, t_world_to_camera, mtx, dist)
-                cf_linkbody_mean = cf_linkbody_mean.reshape(-1, 2).astype(int)
-
-                for pt in cf_linkbody_mean:
-                    neon_green = (57, 255, 20)
-                    # Draw the transformed centroid and tips! as a circle
-                    cv2.circle(frame, tuple(pt), 5, neon_green, -1)
-
-
-            # so link_body.data is in wf -> i need it back in the cf to project it on the 
-
-            # now i need to display link_body in cf  and project it 
-
+                link_body.compute_mean()
+                link_body.display_linkbody(R_world_to_camera, t_world_to_camera)
+                link_body.compute_axes() # compute x axis from centroid to the tip  
 
 
             # this part is reserved for TRIANGLE POSE AND ESTIMATION
