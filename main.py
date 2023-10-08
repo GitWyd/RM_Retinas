@@ -9,6 +9,7 @@ import pandas as pd
 ## GLOBAL CONSTANTS ##
 ######################
 
+print(pd.__version__)
 
 # Define world tags and their locations in world frame
 WORLD_TAGS = {
@@ -31,24 +32,6 @@ H = 0.010 # 10cm
 R = 0.02 # 2cm
 R_prime = sqrt(3) * R
 
-# Define link tags and their lcoations in link frame
-# LINK_TAGS = {
-#     # UPPER EDGE TAGS
-#     1: [R, 0, H/2],
-#     2: [R/2, R_prime/2, H/2],
-#     3: [-R/2, R_prime/2, H/2],
-#     4: [-R, 0, H/2],
-#     5: [-R/2, -R_prime/2, H/2],
-#     6: [R/2, -R_prime/2, H/2],
-#     # BOTTOM EDGE TAGS
-#     7: [R, 0, -H/2],
-#     8: [R/2, R_prime/2, -H/2],
-#     9: [-R/2, R_prime/2, -H/2],
-#     10: [-R, 0, -H/2],
-#     11: [-R/2, -R_prime/2, -H/2],
-#     12: [R/2, -R_prime/2, -H/2],
-# }
-
 world_tag_size = 0.055 # 55mm
 april_tag_size = 0.017
 
@@ -60,12 +43,16 @@ obj_pts_square = np.array([
     [ april_tag_size/2,  april_tag_size/2, 0],
 ])
 
+columns = ['link_tag_id', 'centroid_x', 'centroid_y', 'centroid_z',
+                   'upper_tip_x', 'upper_tip_y', 'upper_tip_z',
+                   'bottom_tip_x', 'bottom_tip_y', 'bottom_tip_z']
+
 #############
 ## CLASSES ##
 #############
 
 
-class Tag:
+class Tag():
     def __init__(self, frame, tag, R_camera_to_world, t_camera_to_world, tag_size):
         # self.mtx = mtx
         # self.dist = dist
@@ -80,9 +67,14 @@ class Tag:
         [ tag_size/2,  tag_size/2, 0],
         [-tag_size/2,  tag_size/2, 0]
         ])
+        self.cf_linkbody_pts = np.array([])
         
+        # related to link
+
         #frame, tag, R_avg_camera_to_world, t_avg_camera_to_world, tag_size
     
+
+
     # def draw_original_tag_boundary(self):
     #     # Draw detected corners without transformation for comparison
     #     corners = self.tag.corners.astype(int)
@@ -123,8 +115,9 @@ class Tag:
 
         return None
 
-    def draw_linkbody(self, link_tag_id, servo_extension = 0):
-        
+
+    def calculate_linkbody(self, link_tag_id, servo_extension = 0):
+
         # if link frame id is from 0 to 5 -> UPPER
         if (0 <= link_tag_id <= 5):
             linkbody_pts = np.array([
@@ -138,17 +131,22 @@ class Tag:
             [0.085+servo_extension, 0, 0.016] # bottom tip (servo unextended) 
             ])
 
-        cf_linkbody_pts, _ = cv2.projectPoints(linkbody_pts, self.tag.pose_R, self.tag.pose_t, mtx, dist)
-        cf_linkbody_pts = cf_linkbody_pts.reshape(-1, 2).astype(int)
-        
-        print("Shape of cf_linkbody_pts:", cf_linkbody_pts.shape)
+        self.cf_linkbody_pts, _ = cv2.projectPoints(linkbody_pts, self.tag.pose_R, self.tag.pose_t, mtx, dist)
+        self.cf_linkbody_pts = self.cf_linkbody_pts.reshape(-1, 2).astype(int)
 
-        for pt in cf_linkbody_pts:
+        return None
+
+    def draw_linkbody(self, link_tag_id, servo_extension = 0):
+        
+        
+        print("Shape of cf_linkbody_pts:", self.cf_linkbody_pts.shape)
+
+        for pt in self.cf_linkbody_pts:
             neon_green = (57, 255, 20)
             # Draw the transformed centroid and tips! as a circle
             cv2.circle(self.frame, tuple(pt), 5, neon_green, -1)
 
-        return cf_linkbody_pts
+        return None
 
     def compute_tranformation(self):
 
@@ -173,7 +171,9 @@ class Tag:
 
 
     def project_to_world(self, R_tag_to_world, t_tag_to_world, cf_tag_corners, cf_linkbody_pts = None, link_tag_id = None, servo_extension = 0):
-
+        
+        centroid_world = 0
+        tip_world = 0
         # Only execute linkbody related code if both camera_linkbody_pts and link_tag_id are provided
         if cf_linkbody_pts is not None and link_tag_id is not None:
 
@@ -215,9 +215,6 @@ class Tag:
         world_pos_str = f"X: {(t_tag_to_world[0][0])*100:.1f}, Y: {(t_tag_to_world[1][0])*100:.1f}, Z: {(t_tag_to_world[2][0])*100:.1f}"
         cv2.putText(self.frame, world_pos_str, (cf_tag_center[0] - 60, cf_tag_center[1] - text_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2, cv2.LINE_AA)
 
-        
-
-
         #####################################################
         # HAVE TO ADD PART FOR TAG TO WORLD FOR THE CENTROID AND TIP POINTS AS WELL ALSO FOR X - AXES####
         #####################################################
@@ -226,17 +223,18 @@ class Tag:
    
 
 class LinkBody:
-    def __init__(self):
+    def __init__(self, frame):
         self.tags = {}
+        self.frame = frame
         # self.tags[link_tag_id][centroid] = #centroid value
-        columns = ['link_tag_id', 'centroid_x', 'centroid_y', 'centroid_z',
-                   'upper_tip_x', 'upper_tip_y', 'upper_tip_z',
-                   'bottom_tip_x', 'bottom_tip_y', 'bottom_tip_z']
+        # columns = ['link_tag_id', 'centroid_x', 'centroid_y', 'centroid_z',
+        #            'upper_tip_x', 'upper_tip_y', 'upper_tip_z',
+        #            'bottom_tip_x', 'bottom_tip_y', 'bottom_tip_z']
         
         # initialize dataframe to collect link centroid, tip, axes data
         self.data = pd.DataFrame(columns=columns)
 
-    def update_data(self, link_tag_id, centroid, tip):
+    def update_data(self, link_num, link_tag_id, centroid, tip):
         # determine tip type
         if 0 <= link_tag_id <= 5:
             tip_type = 'upper_tip'
@@ -244,28 +242,39 @@ class LinkBody:
             tip_type = 'bottom_tip'
         
         new_data = {
+            'link_num': link_num,
             'link_tag_id': link_tag_id,
             'centroid_x': centroid[0], 'centroid_y': centroid[1], 'centroid_z': centroid[2],
             tip_type+'_x': tip[0], tip_type+'_y': tip[1], tip_type+'_z': tip[2]
         }
-
-        self.data = self.data.append(new_data, ignore_index = True)
+        # print(type(self.data))
+        print(self.data)
+        # self.data = self.data.append(new_data, ignore_index = True)
+        self.data = pd.concat([self.data, pd.DataFrame([new_data])], ignore_index=True)
 
     def compute_mean(self):
-        mean_values = {
-            'link_tag_id' : 'Mean',
-            'centroid_x': self.data['centroid_x'].mean(),
-            'centroid_y': self.data['centroid_y'].mean(),
-            'centroid_z': self.data['centroid_z'].mean(),
-            'upper_tip_x': self.data['upper_tip_x'].mean(),
-            'upper_tip_y': self.data['upper_tip_y'].mean(),
-            'upper_tip_z': self.data['upper_tip_z'].mean(),
-            'bottom_tip_x': self.data['bottom_tip_x'].mean(),
-            'bottom_tip_y': self.data['bottom_tip_y'].mean(),
-            'bottom_tip_z': self.data['bottom_tip_z'].mean()
-        }
-        self.data.append(mean_values, ignore_index = True)
-            
+
+        unique_link_nums = self.data['link_num'].unique()
+
+        for link_num in unique_link_nums:
+            filtered_data = self.data[self.data['link_num'] == link_num]
+            mean_values = {
+                'link_num' : link_num,
+                'link_tag_id' : 'Mean',
+                'centroid_x': filtered_data['centroid_x'].mean(),
+                'centroid_y': filtered_data['centroid_y'].mean(),
+                'centroid_z': filtered_data['centroid_z'].mean(),
+                'upper_tip_x': filtered_data['upper_tip_x'].mean(),
+                'upper_tip_y': filtered_data['upper_tip_y'].mean(),
+                'upper_tip_z': filtered_data['upper_tip_z'].mean(),
+                'bottom_tip_x': filtered_data['bottom_tip_x'].mean(),
+                'bottom_tip_y': filtered_data['bottom_tip_y'].mean(),
+                'bottom_tip_z': filtered_data['bottom_tip_z'].mean()
+            }
+            # self.data = self.data.append(mean_values, ignore_index = True)
+            self.data = pd.concat([self.data, pd.DataFrame([mean_values])], ignore_index=True)
+
+        return None
 
     def append(self, tag):
         # link_tag_id is from 1 to 12
@@ -282,6 +291,8 @@ class LinkBody:
             'center': tag.center, # rotation matrix of the pose estimate
             'pose_err' : tag.pose_err # object-space error of the estimation
         }
+
+        return None
     
     def get_link_tag_id(self, link_tag_id):
         self.tags.get(link_tag_id, {})
@@ -289,7 +300,7 @@ class LinkBody:
     def display_linkbody(self, R_world_to_camera, t_world_to_camera):
 
         # TO DISPLAY THE MEAN LINKBODY PTS IN THE CF
-        mean_row = self.data[[self.data['link_tag_id'] == "Mean"]].iloc[0]
+        mean_row = self.data[self.data['link_tag_id'] == "Mean"].iloc[0]
         wf_centroid = (mean_row['centroid_x'], mean_row['centroid_y'], mean_row['centroid_z'])
         wf_upper_tip = (mean_row['upper_tip_x'], mean_row['upper_tip_y'], mean_row['upper_tip_z'])
         wf_bottom_tip = (mean_row['bottom_tip_x'], mean_row['bottom_tip_y'], mean_row['bottom_tip_z'])
@@ -304,10 +315,17 @@ class LinkBody:
         cf_linkbody_mean = cf_linkbody_mean.reshape(-1, 2).astype(int)
 
         neon_green = (57, 255, 20)
-        
+
         for pt in cf_linkbody_mean:
-            # Draw the transformed centroid and tips! as a circle
-            cv2.circle(frame, tuple(pt), 5, neon_green, -1)
+            cv2.circle(self.frame, tuple(pt), 5, neon_green, -1)
+        # print(cf_linkbody_mean)
+        # for pt in cf_linkbody_mean:
+        #     print(pt)
+        #     # Draw the transformed centroid and tips! as a circle
+        #     if not any(np.isinf(pt)) and not any(np.isnan(pt)) and (pt > 0).all():
+        #         cv2.circle(self.frame, tuple(pt), 5, neon_green, -1)
+        #     else:
+        #         print(f"Invalid point: {pt}")
 
 
     # this function should calculate the link's pose from the detected apriltags. position of the link is the centroid of the link and the orientation is the orientation of the link
@@ -328,17 +346,10 @@ class LinkBody:
             center = link_tag['center']
             pose_err = link_tag['pose_err']
         
-
             # first perform some operation to obtain the centroid of the link from the detected tags, also use LINK_TAGS
             # Apply transformation to move from link frame to the world frame
             # values[pose_t] = (,,)
             
-#     for link in links.values():
-#         for link_tag_id, values in link.tags.items():
-            
-#         pos = link.tags[link_tag_id]['pose_t']
-#         link.tags 
-
     def draw_pose(link_pose):
 
 
@@ -503,7 +514,7 @@ def main():
                     
                     # logic for storing tag pose data to LinkPose instances
                     if link_num not in links:
-                        links[link_num] = LinkBody()
+                        links[link_num] = LinkBody(frame)
                     
                     links[link_num].append(tag)
                     # links[link_num].get_link_tag_id(link_tag_id)
@@ -514,31 +525,24 @@ def main():
                     # detected_tag.draw_original_boundary()
                     cf_tag_corners = detected_tag.draw_tag_boundary()
                     detected_tag.draw_axes()
-                    cf_linkbody_pts = detected_tag.draw_linkbody(link_tag_id)
+                    
+                    detected_tag.calculate_linkbody(link_tag_id)
+                    # detected_tag.draw_linkbody(link_tag_id)
 
                     R_tag_to_world, t_tag_to_world = detected_tag.compute_tranformation()
-                    centroid, tip = detected_tag.project_to_world(R_tag_to_world, t_tag_to_world, cf_tag_corners, cf_linkbody_pts, link_tag_id)
-                    links[link_num].update_data(link_tag_id, centroid, tip)
+                    wf_centroid, wf_tip = detected_tag.project_to_world(R_tag_to_world, t_tag_to_world, cf_tag_corners, detected_tag.cf_linkbody_pts, link_tag_id)
+                    
+                    # update data
+                    links[link_num].update_data(link_num, link_tag_id, wf_centroid, wf_tip)
 
             for link_body in links.values():
                 
                 link_body.compute_mean()
                 link_body.display_linkbody(R_world_to_camera, t_world_to_camera)
-                link_body.compute_axes() # compute x axis from centroid to the tip  
-
-
-            # this part is reserved for TRIANGLE POSE AND ESTIMATION
-            # for link in links.values():
-            #     link_pose = link.pose_estimation()
-            #     link.draw_pose(link_pose)
-
-            # now we have all data stored in links
-            # for LinkTags Instance in links, we must calculate the center and the axes
-            # using the predefined LINK_TAGS
-            # links_pose = link_pose_estimation(links)
-
-            # After all the calculations, draw link pose [pos and orientation and highlight as neon green]
-            # draw_link_pose()
+                # link_body.compute_axes() # compute x axis from centroid to the tip
+                
+                # reset dataframe for the next frame -> later u will use this line to collect data   
+              
 
         frame_resized = cv2.resize(frame, (display_width, display_height))
         cv2.imshow("AprilTags Pose Estimation", frame_resized)
