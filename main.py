@@ -202,10 +202,10 @@ class Tag():
             cf_centroid = cf_linkbody_pts[0]
             cf_tip = cf_linkbody_pts[1]
 
-            # display world coordinates on the camera frame cordinates (since our view is in camera frame)
-            offset_y = 20  # vertical offset for text placement
-            cv2.putText(self.frame, centroid_str, (cf_centroid[0] - 60, cf_centroid[1] - offset_y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2, cv2.LINE_AA)
-            cv2.putText(self.frame, tip_str, (cf_tip[0] - 60, cf_tip[1] - offset_y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2, cv2.LINE_AA)
+            # # display world coordinates on the camera frame cordinates (since our view is in camera frame)
+            # offset_y = 20  # vertical offset for text placement
+            # cv2.putText(self.frame, centroid_str, (cf_centroid[0] - 60, cf_centroid[1] - offset_y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2, cv2.LINE_AA)
+            # cv2.putText(self.frame, tip_str, (cf_tip[0] - 60, cf_tip[1] - offset_y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2, cv2.LINE_AA)
         
         # Set a static offset for the text, e.g., 10 pixels above the tag center.
         cf_tag_center = np.mean(cf_tag_corners, axis=0).astype(int)
@@ -302,10 +302,6 @@ class LinkBody:
         wf_upper_tip = (mean_row['upper_tip_x'], mean_row['upper_tip_y'], mean_row['upper_tip_z'])
         wf_bottom_tip = (mean_row['bottom_tip_x'], mean_row['bottom_tip_y'], mean_row['bottom_tip_z'])
         
-        wf_centroid = (mean_row['centroid_x'], mean_row['centroid_y'], mean_row['centroid_z'])
-        wf_upper_tip = (mean_row['upper_tip_x'], mean_row['upper_tip_y'], mean_row['upper_tip_z'])
-        wf_bottom_tip = (mean_row['bottom_tip_x'], mean_row['bottom_tip_y'], mean_row['bottom_tip_z'])
-        
         wf_linkbody_mean = np.array([wf_centroid, wf_upper_tip, wf_bottom_tip], dtype = np.float32)
         # cf_linkbody_mean = np.dot(R_world_to_camera, a) + t_world_to_camera
         cf_linkbody_mean, _ = cv2.projectPoints(wf_linkbody_mean, R_world_to_camera, t_world_to_camera, mtx, dist)
@@ -317,14 +313,31 @@ class LinkBody:
         print(f"cf_linkbody_mean{cf_linkbody_reshaped}")
 
 
+        centroid_str = f"Centroid: X: {wf_centroid[0]*100:.1f}, Y: {wf_centroid[1]*100:.1f}, Z: {wf_centroid[2]*100:.1f}"
+        upper_tip_str = f"Upper Tip: X: {wf_upper_tip[0]*100:.1f}, Y: {wf_upper_tip[1]*100:.1f}, Z: {wf_upper_tip[2]*100:.1f}"
+        bottom_tip_str = f"Bottom Tip: X: {wf_bottom_tip[0]*100:.1f}, Y: {wf_bottom_tip[1]*100:.1f}, Z: {wf_bottom_tip[2]*100:.1f}"
+
         neon_green = (57, 255, 20)
 
         for pt in cf_linkbody_reshaped[mask]:
             # print(pt)
+            counter = 0
             if not np.isnan(np.array(pt)).any(): # skip
                 # print(tuple(pt))
                 # cv2.circle(self.frame, tuple(pt), 5, neon_green, -1)
                 cv2.circle(self.frame, center=(int(pt[0]), int(pt[1])), radius=5, color=neon_green, thickness=-1)
+                
+                # display world coordinates on the camera frame cordinates (since our view is in camera frame)
+                offset_y = 20  # vertical offset for text placement
+                if counter == 0:
+                    cv2.putText(self.frame, centroid_str, (int(pt[0]) - 60, int(pt[1]) - offset_y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2, cv2.LINE_AA)
+                elif counter == 1:
+                    cv2.putText(self.frame, upper_tip_str, (int(pt[0]) - 60, int(pt[1]) - offset_y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2, cv2.LINE_AA)
+                elif counter == 2:
+                    cv2.putText(self.frame, bottom_tip_str, (int(pt[0]) - 60, int(pt[1]) - offset_y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2, cv2.LINE_AA)
+            counter +=1
+
+
 
         # print(cf_linkbody_mean)
         # for pt in cf_linkbody_mean:
