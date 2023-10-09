@@ -319,9 +319,10 @@ class LinkBody:
 
         neon_green = (57, 255, 20)
 
+        counter = 0
+
         for pt in cf_linkbody_reshaped[mask]:
             # print(pt)
-            counter = 0
             if not np.isnan(np.array(pt)).any(): # skip
                 # print(tuple(pt))
                 # cv2.circle(self.frame, tuple(pt), 5, neon_green, -1)
