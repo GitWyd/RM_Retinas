@@ -27,11 +27,6 @@ WORLD_TAGS = {
     586: np.array([0.3, 0.3, 0])
 }
 
-# Define link and the attached 12 apriltags in link frame
-H = 0.010 # 10cm
-R = 0.02 # 2cm
-R_prime = sqrt(3) * R
-
 world_tag_size = 0.055 # 55mm
 april_tag_size = 0.017
 
@@ -349,33 +344,11 @@ class LinkBody:
         #     else:
         #         print(f"Invalid point: {pt}")
 
-
-    # this function should calculate the link's pose from the detected apriltags. position of the link is the centroid of the link and the orientation is the orientation of the link
-    def pose_estimation(self):
-
-        for link_tag_id, link_tag in self.tags.items():
-            # Get link frame tag position
-            link_frame_tag_position = LINK_TAGS[link_tag_id]
-            
-            # Get pose of the tag in camera frame
-            t_link_to_camera = link_tag['pose_t']
-            R_link_to_camera = link_tag['pose_R']
-            
-            # Transform the tag's position from link frame to camera frame
-            t_link = np.dot(R_link_to_camera, link_frame_tag_position) + t_link_to_camera
-            
-            
-            center = link_tag['center']
-            pose_err = link_tag['pose_err']
-        
-            # first perform some operation to obtain the centroid of the link from the detected tags, also use LINK_TAGS
-            # Apply transformation to move from link frame to the world frame
-            # values[pose_t] = (,,)
-            
-    def draw_pose(link_pose):
-
+    def compute_axes(self):
+        # compute axes using the tag's
 
         return None
+            
 
 
 ####################
@@ -525,9 +498,6 @@ def main():
                         validate_world_position(tag, t_tag_to_world, frame, world_tag_counter)
                         world_tag_counter += 1
 
-
-
-
             for tag in result_april_tags:
                 if tag.tag_id not in WORLD_TAGS:
                     
@@ -541,8 +511,6 @@ def main():
                     links[link_num].append(tag)
                     # links[link_num].get_link_tag_id(link_tag_id)
 
-                     
-
                     detected_tag = Tag(frame, tag, R_camera_to_world, t_camera_to_world, april_tag_size)
                     # detected_tag.draw_original_boundary()
                     cf_tag_corners = detected_tag.draw_tag_boundary()
@@ -552,6 +520,7 @@ def main():
                     # detected_tag.draw_linkbody(link_tag_id)
 
                     R_tag_to_world, t_tag_to_world = detected_tag.compute_tranformation()
+                    # estimate wf pose
                     wf_centroid, wf_tip = detected_tag.project_to_world(R_tag_to_world, t_tag_to_world, cf_tag_corners, detected_tag.cf_linkbody_pts, link_tag_id)
                     
                     # update data
@@ -562,8 +531,8 @@ def main():
                 link_body.compute_mean()
                 link_body.display_linkbody(R_world_to_camera, t_world_to_camera)
                 # link_body.compute_axes() # compute x axis from centroid to the tip
-                
-                # reset dataframe for the next frame -> later u will use this line to collect data   
+                link_body.compute_axes()
+                 
               
 
         frame_resized = cv2.resize(frame, (display_width, display_height))
