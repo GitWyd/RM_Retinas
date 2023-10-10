@@ -404,6 +404,9 @@ class LinkBody:
             counter +=1 
 
 
+
+
+
 ####################
 ## INITIALIZATION ##
 ####################
@@ -567,8 +570,6 @@ def main():
                     
                     # links[link_num].get_link_tag_id(link_tag_id)
 
-                     
-
                     detected_tag = Tag(frame, tag, R_camera_to_world, t_camera_to_world, april_tag_size)
                     links[link_num].append(detected_tag, link_tag_id)
                     # detected_tag.draw_original_boundary()
@@ -581,6 +582,7 @@ def main():
                     # detected_tag.draw_linkbody(link_tag_id)
 
                     R_tag_to_world, t_tag_to_world = detected_tag.compute_tranformation()
+                    # estimate wf pose
                     wf_centroid, wf_tip = detected_tag.project_to_world(R_tag_to_world, t_tag_to_world, cf_tag_corners, detected_tag.cf_linkbody_pts, link_tag_id)
                     
                     
