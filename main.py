@@ -4,6 +4,7 @@ import numpy as np
 import cv2
 import dt_apriltags
 import pandas as pd
+import time
 
 ######################
 ## GLOBAL CONSTANTS ##
@@ -515,7 +516,19 @@ def compute_reprojection_error(tag):
 
 
 def main():
+
+    total_frames = 0
+    total_time = 0
+    
+    # Create a video writer object
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    out = cv2.VideoWriter('output.avi', fourcc, cap.get(cv2.CAP_PROP_FPS), (display_width, display_height))
+
+
     while True:
+        start_time = time.time()
+
+
         ret, frame = cap.read()
         if not ret:
             break
@@ -601,14 +614,27 @@ def main():
      
                 
                 # reset dataframe for the next frame -> later u will use this line to collect data   
-              
 
+        # Counting the frames
+        total_frames += 1
+        total_time += (end_time-start_time)              
+
+        out.write(framed_resized)
         frame_resized = cv2.resize(frame, (display_width, display_height))
         cv2.imshow("AprilTags Pose Estimation", frame_resized)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):  # Press ESC to exit
-            break
+            end_time = time.time()
 
+            break
+    
+    if total_time != 0:
+        fps = total_frames/total_time
+        print(f"Average FPS: {fps}")
+    else:
+        print("Total time is zero.")
+
+    out.release() # close the video file
     cap.release()
     cv2.destroyAllWindows()
 
