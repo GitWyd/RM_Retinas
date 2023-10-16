@@ -1,6 +1,6 @@
 # Retinas V2
 
-Inspired by the original Retinas repository, Retinas V2 offers enhanced capabilities for AprilTag tracking and pose estimation using OpenCV.
+Inspired by the original Retinas repository, Retinas V2 offers enhanced capabilities for world reconstruction and localization for truss modular robots using AprilTags.
 
 ## Requirements
 
