@@ -454,6 +454,7 @@ detector = dt_apriltags.Detector(searchpath=['apriltags'],
 
 # link number and related TagPose instances
 # data collection and organization for later compute
+
 # DATA STRUCTURE
 # links  = { link_num : LinkBody instances for the link_num }
 # these instances have related tags as values{ 'link_num'.tags[link_frame_tag_id] }
