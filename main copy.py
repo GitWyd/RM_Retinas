@@ -85,7 +85,7 @@ class Tag():
 
         # Draw the tag boundary in green
         for i in range(4):
-            cv2.line(blank_canvas, tuple(cf_tag_corners[i]), tuple(cf_tag_corners[(i+1)%4]), (255, 0, 0), 2)
+            cv2.line(frame, tuple(cf_tag_corners[i]), tuple(cf_tag_corners[(i+1)%4]), (255, 0, 0), 2)
 
         return cf_tag_corners # tag corners in camera frame
 
@@ -109,7 +109,7 @@ class Tag():
         # Draw the transformed XYZ axes on to the Camera Frame
         colors = [(0, 0, 255), (0, 255, 0), (255, 0, 0)]
         for i in range(1, 4):
-            cv2.line(blank_canvas, tuple(img_pts_axes[0]), tuple(img_pts_axes[i]), colors[i-1], 2)
+            cv2.line(frame, tuple(img_pts_axes[0]), tuple(img_pts_axes[i]), colors[i-1], 2)
 
         return None
 
@@ -179,7 +179,7 @@ class Tag():
         for pt in self.cf_linkbody_pts:
             neon_green = (57, 255, 20)
             # Draw the transformed centroid and tips! as a circle
-            cv2.circle(blank_canvas, tuple(pt), 5, neon_green, -1)
+            cv2.circle(frame, tuple(pt), 5, neon_green, -1)
 
         return None
 
@@ -250,7 +250,7 @@ class Tag():
         #Display the pose estimation coordinates relative to the world frame ABOVE the tag
         if self.tag_id == 575:
             world_pos_str = f"X: {(t_tag_to_world[0][0])*100:.1f}, Y: {(t_tag_to_world[1][0])*100:.1f}, Z: {(t_tag_to_world[2][0])*100:.1f}"
-            cv2.putText(blank_canvas, world_pos_str, (cf_tag_center[0] - 60, cf_tag_center[1] - text_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2, cv2.LINE_AA)
+            cv2.putText(frame, world_pos_str, (cf_tag_center[0] - 60, cf_tag_center[1] - text_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2, cv2.LINE_AA)
 
         #####################################################
         # HAVE TO ADD PART FOR TAG TO WORLD FOR THE CENTROID AND TIP POINTS AS WELL ALSO FOR X - AXES####
@@ -362,7 +362,7 @@ class LinkBody:
         for i in range(1, 4):
             start_point = tuple(map(int, cf_axes_pts[0]))
             end_point = tuple(map(int, cf_axes_pts[i]))
-            cv2.line(blank_canvas, start_point, end_point, colors[i-1], 2)
+            cv2.line(frame, start_point, end_point, colors[i-1], 2)
 
         wf_linkbody_mean = np.array([wf_centroid, wf_upper_tip, wf_bottom_tip], dtype = np.float32)
         # cf_linkbody_mean = np.dot(R_world_to_camera, a) + t_world_to_camera
@@ -388,16 +388,16 @@ class LinkBody:
             if not np.isnan(np.array(pt)).any(): # skip
                 # print(tuple(pt))
                 # cv2.circle(self.frame, tuple(pt), 5, neon_green, -1)
-                cv2.circle(blank_canvas, center=(int(pt[0]), int(pt[1])), radius=5, color=neon_green, thickness=-1)
+                cv2.circle(frame, center=(int(pt[0]), int(pt[1])), radius=5, color=neon_green, thickness=-1)
                 
                 # display world coordinates on the camera frame cordinates (since our view is in camera frame)
                 offset_y = 20  # vertical offset for text placement
                 if counter == 0:
-                    cv2.putText(blank_canvas, centroid_str, (int(pt[0]) - 60, int(pt[1]) - offset_y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2, cv2.LINE_AA)
+                    cv2.putText(frame, centroid_str, (int(pt[0]) - 60, int(pt[1]) - offset_y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2, cv2.LINE_AA)
                 elif counter == 1:
-                    cv2.putText(blank_canvas, upper_tip_str, (int(pt[0]) - 60, int(pt[1]) - offset_y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2, cv2.LINE_AA)
+                    cv2.putText(frame, upper_tip_str, (int(pt[0]) - 60, int(pt[1]) - offset_y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2, cv2.LINE_AA)
                 elif counter == 2:
-                    cv2.putText(blank_canvas, bottom_tip_str, (int(pt[0]) - 60, int(pt[1]) - offset_y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2, cv2.LINE_AA)
+                    cv2.putText(frame, bottom_tip_str, (int(pt[0]) - 60, int(pt[1]) - offset_y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2, cv2.LINE_AA)
             counter +=1 
 
 
@@ -492,7 +492,7 @@ def validate_world_position(tag, t_tag_to_world, frame, tag_index):
 
         vertical_position = 30 + tag_index * 30
         position = (frame.shape[1] - 600, vertical_position)
-        cv2.putText(blank_canvas, display_text, position, cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2, cv2.LINE_AA)
+        cv2.putText(frame, display_text, position, cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2, cv2.LINE_AA)
            
         return difference
     return None
@@ -516,8 +516,6 @@ while True:
     ret, frame = cap.read()
     if not ret:
         break
-
-    blank_canvas = np.zeros_like(frame)
     
     links = {}
 
@@ -601,9 +599,6 @@ while True:
             
 
     frame_resized = cv2.resize(frame, (display_width, display_height))
-    cv2.imshow("AprilTags Pose Estimation", frame_resized)
-
-    frame_resized = cv2.resize(blank_canvas, (display_width, display_height))
     cv2.imshow("AprilTags Pose Estimation", frame_resized)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):  # Press ESC to exit

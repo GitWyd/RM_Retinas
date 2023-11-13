@@ -1,9 +1,11 @@
 import os
+import sys
 from math import sqrt
 import numpy as np
 import cv2
 import dt_apriltags
 import pandas as pd
+import time
 
 ######################
 ## GLOBAL CONSTANTS ##
@@ -54,7 +56,6 @@ class Tag():
         # self.dist = dist
         self.frame = frame
         self.tag = tag
-        self.tag_id = tag.tag_id
         self.R_camera_to_world = R_camera_to_world
         self.t_camera_to_world = t_camera_to_world
         self.tag_size = tag_size
@@ -85,7 +86,7 @@ class Tag():
 
         # Draw the tag boundary in green
         for i in range(4):
-            cv2.line(blank_canvas, tuple(cf_tag_corners[i]), tuple(cf_tag_corners[(i+1)%4]), (255, 0, 0), 2)
+            cv2.line(self.frame, tuple(cf_tag_corners[i]), tuple(cf_tag_corners[(i+1)%4]), (255, 0, 0), 2)
 
         return cf_tag_corners # tag corners in camera frame
 
@@ -109,7 +110,7 @@ class Tag():
         # Draw the transformed XYZ axes on to the Camera Frame
         colors = [(0, 0, 255), (0, 255, 0), (255, 0, 0)]
         for i in range(1, 4):
-            cv2.line(blank_canvas, tuple(img_pts_axes[0]), tuple(img_pts_axes[i]), colors[i-1], 2)
+            cv2.line(self.frame, tuple(img_pts_axes[0]), tuple(img_pts_axes[i]), colors[i-1], 2)
 
         return None
 
@@ -179,7 +180,7 @@ class Tag():
         for pt in self.cf_linkbody_pts:
             neon_green = (57, 255, 20)
             # Draw the transformed centroid and tips! as a circle
-            cv2.circle(blank_canvas, tuple(pt), 5, neon_green, -1)
+            cv2.circle(self.frame, tuple(pt), 5, neon_green, -1)
 
         return None
 
@@ -247,10 +248,14 @@ class Tag():
         text_offset = 10
 
         ############ DISPLAY WORLD POS OF THE TAGS ################### CAN BE OFF FOR NOW
+        ##Display the pose estimation coordinates relative to the world frame ABOVE the tag
+        # world_pos_str = f"X: {(t_tag_to_world[0][0])*100:.1f}, Y: {(t_tag_to_world[1][0])*100:.1f}, Z: {(t_tag_to_world[2][0])*100:.1f}"
+        # cv2.putText(self.frame, world_pos_str, (cf_tag_center[0] - 60, cf_tag_center[1] - text_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2, cv2.LINE_AA)
+
         #Display the pose estimation coordinates relative to the world frame ABOVE the tag
         if self.tag_id == 575:
             world_pos_str = f"X: {(t_tag_to_world[0][0])*100:.1f}, Y: {(t_tag_to_world[1][0])*100:.1f}, Z: {(t_tag_to_world[2][0])*100:.1f}"
-            cv2.putText(blank_canvas, world_pos_str, (cf_tag_center[0] - 60, cf_tag_center[1] - text_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2, cv2.LINE_AA)
+            cv2.putText(self.frame, world_pos_str, (cf_tag_center[0] - 60, cf_tag_center[1] - text_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2, cv2.LINE_AA)
 
         #####################################################
         # HAVE TO ADD PART FOR TAG TO WORLD FOR THE CENTROID AND TIP POINTS AS WELL ALSO FOR X - AXES####
@@ -362,7 +367,7 @@ class LinkBody:
         for i in range(1, 4):
             start_point = tuple(map(int, cf_axes_pts[0]))
             end_point = tuple(map(int, cf_axes_pts[i]))
-            cv2.line(blank_canvas, start_point, end_point, colors[i-1], 2)
+            cv2.line(self.frame, start_point, end_point, colors[i-1], 2)
 
         wf_linkbody_mean = np.array([wf_centroid, wf_upper_tip, wf_bottom_tip], dtype = np.float32)
         # cf_linkbody_mean = np.dot(R_world_to_camera, a) + t_world_to_camera
@@ -388,16 +393,16 @@ class LinkBody:
             if not np.isnan(np.array(pt)).any(): # skip
                 # print(tuple(pt))
                 # cv2.circle(self.frame, tuple(pt), 5, neon_green, -1)
-                cv2.circle(blank_canvas, center=(int(pt[0]), int(pt[1])), radius=5, color=neon_green, thickness=-1)
+                cv2.circle(self.frame, center=(int(pt[0]), int(pt[1])), radius=5, color=neon_green, thickness=-1)
                 
                 # display world coordinates on the camera frame cordinates (since our view is in camera frame)
                 offset_y = 20  # vertical offset for text placement
                 if counter == 0:
-                    cv2.putText(blank_canvas, centroid_str, (int(pt[0]) - 60, int(pt[1]) - offset_y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2, cv2.LINE_AA)
+                    cv2.putText(self.frame, centroid_str, (int(pt[0]) - 60, int(pt[1]) - offset_y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2, cv2.LINE_AA)
                 elif counter == 1:
-                    cv2.putText(blank_canvas, upper_tip_str, (int(pt[0]) - 60, int(pt[1]) - offset_y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2, cv2.LINE_AA)
+                    cv2.putText(self.frame, upper_tip_str, (int(pt[0]) - 60, int(pt[1]) - offset_y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2, cv2.LINE_AA)
                 elif counter == 2:
-                    cv2.putText(blank_canvas, bottom_tip_str, (int(pt[0]) - 60, int(pt[1]) - offset_y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2, cv2.LINE_AA)
+                    cv2.putText(self.frame, bottom_tip_str, (int(pt[0]) - 60, int(pt[1]) - offset_y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2, cv2.LINE_AA)
             counter +=1 
 
 
@@ -413,8 +418,16 @@ cap = cv2.VideoCapture(4)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 3840)  # Width
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 2160)  # Height
 
+# # Setting up paths
+# # Obtain path of current script
+# current_script_path = os.path.abspath(__file__)
 
-# Loading calibration results
+# # Get the root foler path
+# root_folder_path = os.path.dirname()
+
+# particleTrussServer/RM_Retinas/assets/calibration
+
+# Loading Camera Calibration Results
 calib_file = os.path.join("particleTrussServer/RM_Retinas/assets/calibration", "calibration_data.npz")
 
 # The path when pwd is RM_Retinas
@@ -450,6 +463,7 @@ detector = dt_apriltags.Detector(searchpath=['apriltags'],
 
 # link number and related TagPose instances
 # data collection and organization for later compute
+
 # DATA STRUCTURE
 # links  = { link_num : LinkBody instances for the link_num }
 # these instances have related tags as values{ 'link_num'.tags[link_frame_tag_id] }
@@ -492,7 +506,7 @@ def validate_world_position(tag, t_tag_to_world, frame, tag_index):
 
         vertical_position = 30 + tag_index * 30
         position = (frame.shape[1] - 600, vertical_position)
-        cv2.putText(blank_canvas, display_text, position, cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2, cv2.LINE_AA)
+        cv2.putText(frame, display_text, position, cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2, cv2.LINE_AA)
            
         return difference
     return None
@@ -511,104 +525,130 @@ def compute_reprojection_error(tag):
 
 
 
+def main():
 
-while True:
-    ret, frame = cap.read()
-    if not ret:
-        break
-
-    blank_canvas = np.zeros_like(frame)
+    total_frames = 0
+    total_time = 0
     
-    links = {}
+    # Create a video writer object
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    out = cv2.VideoWriter('output.avi', fourcc, cap.get(cv2.CAP_PROP_FPS), (display_width, display_height))
 
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    
-    # Detect AprilTags in the frame
-    result_world_tags = detector.detect(gray, True, camera_params, world_tag_size)
-    result_april_tags = detector.detect(gray, True, camera_params, april_tag_size)
 
-    R_camera_to_world = None
-    t_camera_to_world = None
+    while True:
+        start_time = time.time()
 
-    for tag in result_world_tags:
-        # If the detected tag is the origin (tag ID 575), use its transformation as the world frame  
-        if tag.tag_id == 575:
-                R_camera_to_world, t_camera_to_world = get_camera_to_world_transform(tag)
-                R_world_to_camera, t_world_to_camera = tag.pose_R, tag.pose_t
 
-    # If we found the world tag, use its transformation for all other tags. 
-    # Otherwise, skip world frame computations for this frame.
-    if R_camera_to_world is not None and t_camera_to_world is not None:
-        world_tag_counter = 0
+        ret, frame = cap.read()
+        if not ret:
+            break
+        
+        links = {}
+
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        
+        # Detect AprilTags in the frame
+        result_world_tags = detector.detect(gray, True, camera_params, world_tag_size)
+        result_april_tags = detector.detect(gray, True, camera_params, april_tag_size)
+
+        R_camera_to_world = None
+        t_camera_to_world = None
 
         for tag in result_world_tags:
-            if tag.tag_id in WORLD_TAGS:
-                detected_world_tag = Tag(frame, tag, R_camera_to_world, t_camera_to_world, world_tag_size)
-                # t_tag_to_world = draw_pose(frame, tag, R_camera_to_world, t_camera_to_world, world_tag_size)
-                cf_tag_corners = detected_world_tag.draw_tag_boundary()
-                detected_world_tag.draw_axes()
-                R_tag_to_world, t_tag_to_world = detected_world_tag.compute_tranformation()
-                detected_world_tag.project_to_world(R_tag_to_world, t_tag_to_world, cf_tag_corners)
+            # If the detected tag is the origin (tag ID 575), use its transformation as the world frame  
+            if tag.tag_id == 575:
+                    R_camera_to_world, t_camera_to_world = get_camera_to_world_transform(tag)
+                    R_world_to_camera, t_world_to_camera = tag.pose_R, tag.pose_t
 
-                if tag.tag_id is not None:
-                    validate_world_position(tag, t_tag_to_world, frame, world_tag_counter)
-                    world_tag_counter += 1
+        # If we found the world tag, use its transformation for all other tags. 
+        # Otherwise, skip world frame computations for this frame.
+        if R_camera_to_world is not None and t_camera_to_world is not None:
+            world_tag_counter = 0
+
+            for tag in result_world_tags:
+                if tag.tag_id in WORLD_TAGS:
+                    detected_world_tag = Tag(frame, tag, R_camera_to_world, t_camera_to_world, world_tag_size)
+                    # t_tag_to_world = draw_pose(frame, tag, R_camera_to_world, t_camera_to_world, world_tag_size)
+                    cf_tag_corners = detected_world_tag.draw_tag_boundary()
+                    detected_world_tag.draw_axes()
+                    R_tag_to_world, t_tag_to_world = detected_world_tag.compute_tranformation()
+                    detected_world_tag.project_to_world(R_tag_to_world, t_tag_to_world, cf_tag_corners)
+
+                    if tag.tag_id is not None:
+                        validate_world_position(tag, t_tag_to_world, frame, world_tag_counter)
+                        world_tag_counter += 1
 
 
-        for tag in result_april_tags:
-            if tag.tag_id not in WORLD_TAGS:
-                
-                link_num = tag.tag_id // 12 # Link Number starts with P0
-                link_tag_id = tag.tag_id % 12
-                
-                # logic for storing tag pose data to LinkPose instances
-                if link_num not in links:
-                    links[link_num] = LinkBody(frame)
-                
-                # links[link_num].get_link_tag_id(link_tag_id)
+            
 
+            for tag in result_april_tags:
+                if tag.tag_id not in WORLD_TAGS:
                     
-                detected_tag = Tag(frame, tag, R_camera_to_world, t_camera_to_world, april_tag_size)
-                links[link_num].append(detected_tag, link_tag_id)
-                # detected_tag.draw_original_boundary()
-                cf_tag_corners = detected_tag.draw_tag_boundary()
-                detected_tag.draw_axes()
-                # detected_tag.draw_centroid_axes(link_tag_id)
+                    link_num = tag.tag_id // 12 # Link Number starts with P0
+                    link_tag_id = tag.tag_id % 12
+                    
+                    # logic for storing tag pose data to LinkPose instances
+                    if link_num not in links:
+                        links[link_num] = LinkBody(frame)
+                    
+                    # links[link_num].get_link_tag_id(link_tag_id)
+
+                    detected_tag = Tag(frame, tag, R_camera_to_world, t_camera_to_world, april_tag_size)
+                    links[link_num].append(detected_tag, link_tag_id)
+                    # detected_tag.draw_original_boundary()
+                    cf_tag_corners = detected_tag.draw_tag_boundary()
+                    detected_tag.draw_axes()
+                    # detected_tag.draw_centroid_axes(link_tag_id)
+                   
+
+                    detected_tag.calculate_linkbody(link_tag_id)
+                    # detected_tag.draw_linkbody(link_tag_id)
+
+                    R_tag_to_world, t_tag_to_world = detected_tag.compute_tranformation()
+                    # estimate wf pose
+                    wf_centroid, wf_tip = detected_tag.project_to_world(R_tag_to_world, t_tag_to_world, cf_tag_corners, detected_tag.cf_linkbody_pts, link_tag_id)
+                    
+                    
+
+                    # update data
+                    links[link_num].update_data(link_num, link_tag_id, wf_centroid, wf_tip)
+
+            for link_body in links.values():
                 
-
-                detected_tag.calculate_linkbody(link_tag_id)
-                # detected_tag.draw_linkbody(link_tag_id)
-
-                R_tag_to_world, t_tag_to_world = detected_tag.compute_tranformation()
-                wf_centroid, wf_tip = detected_tag.project_to_world(R_tag_to_world, t_tag_to_world, cf_tag_corners, detected_tag.cf_linkbody_pts, link_tag_id)
+                # first_tag_link_tag_id = next(iter(link_body.tags.keys()))
+                # first_tag = next(iter(link_body.tags.values()))
+                # first_tag.draw_centroid_axes(first_tag_link_tag_id)
+                link_body.compute_mean()
+                link_body.display_linkbody(R_world_to_camera, t_world_to_camera)
+                # link_body.compute_axes() # compute x axis from centroid to the tip
+     
                 
-                
+                # reset dataframe for the next frame -> later u will use this line to collect data   
 
-                # update data
-                links[link_num].update_data(link_num, link_tag_id, wf_centroid, wf_tip)
+        # Counting the frames
+        # end_time = time.time()
+        total_frames += 1
+        # total_time += (end_time-start_time)              
 
-        for link_body in links.values():
-            
-            # first_tag_link_tag_id = next(iter(link_body.tags.keys()))
-            # first_tag = next(iter(link_body.tags.values()))
-            # first_tag.draw_centroid_axes(first_tag_link_tag_id)
-            link_body.compute_mean()
-            link_body.display_linkbody(R_world_to_camera, t_world_to_camera)
-            # link_body.compute_axes() # compute x axis from centroid to the tip
+        frame_resized = cv2.resize(frame, (display_width, display_height))
+        out.write(frame_resized)
+        cv2.imshow("AprilTags Pose Estimation", frame_resized)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):  # Press ESC to exit
+            end_time = time.time()
+            total_time += (end_time-start_time)    
+
+            break
     
-            
-            # reset dataframe for the next frame -> later u will use this line to collect data   
-            
+    if total_time != 0:
+        fps = total_frames/total_time
+        print(f"Average FPS: {fps}")
+    else:
+        print("Total time is zero.")
 
-    frame_resized = cv2.resize(frame, (display_width, display_height))
-    cv2.imshow("AprilTags Pose Estimation", frame_resized)
+    out.release() # close the video file
+    cap.release()
+    cv2.destroyAllWindows()
 
-    frame_resized = cv2.resize(blank_canvas, (display_width, display_height))
-    cv2.imshow("AprilTags Pose Estimation", frame_resized)
-
-    if cv2.waitKey(1) & 0xFF == ord('q'):  # Press ESC to exit
-        break
-
-cap.release()
-cv2.destroyAllWindows()
-
+if __name__ == "__main__":
+    main()

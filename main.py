@@ -4,7 +4,6 @@ import numpy as np
 import cv2
 import dt_apriltags
 import pandas as pd
-import time
 
 ######################
 ## GLOBAL CONSTANTS ##
@@ -55,6 +54,7 @@ class Tag():
         # self.dist = dist
         self.frame = frame
         self.tag = tag
+        self.tag_id = tag.tag_id
         self.R_camera_to_world = R_camera_to_world
         self.t_camera_to_world = t_camera_to_world
         self.tag_size = tag_size
@@ -247,10 +247,6 @@ class Tag():
         text_offset = 10
 
         ############ DISPLAY WORLD POS OF THE TAGS ################### CAN BE OFF FOR NOW
-        ##Display the pose estimation coordinates relative to the world frame ABOVE the tag
-        # world_pos_str = f"X: {(t_tag_to_world[0][0])*100:.1f}, Y: {(t_tag_to_world[1][0])*100:.1f}, Z: {(t_tag_to_world[2][0])*100:.1f}"
-        # cv2.putText(self.frame, world_pos_str, (cf_tag_center[0] - 60, cf_tag_center[1] - text_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2, cv2.LINE_AA)
-
         #Display the pose estimation coordinates relative to the world frame ABOVE the tag
         if self.tag_id == 575:
             world_pos_str = f"X: {(t_tag_to_world[0][0])*100:.1f}, Y: {(t_tag_to_world[1][0])*100:.1f}, Z: {(t_tag_to_world[2][0])*100:.1f}"
@@ -405,9 +401,6 @@ class LinkBody:
             counter +=1 
 
 
-
-
-
 ####################
 ## INITIALIZATION ##
 ####################
@@ -416,14 +409,17 @@ class LinkBody:
 # Video capture setup
 display_width = 1920
 display_height = 1080
-cap = cv2.VideoCapture(2)
+cap = cv2.VideoCapture(4)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 3840)  # Width
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 2160)  # Height
 
 
+# Loading calibration results
+calib_file = os.path.join("particleTrussServer/RM_Retinas/assets/calibration", "calibration_data.npz")
 
-# Loading Camera Calibration Results
-calib_file = os.path.join("assets/calibration", 'calibration_data.npz')
+# The path when pwd is RM_Retinas
+# calib_file = os.path.join("assets/calibration", 'calibration_data.npz')
+
 if os.path.exists(calib_file):
     with np.load(calib_file) as X:
         mtx, dist, rvecs, tvecs = X['mtx'], X['dist'], X['rvecs'], X['tvecs']
@@ -454,7 +450,6 @@ detector = dt_apriltags.Detector(searchpath=['apriltags'],
 
 # link number and related TagPose instances
 # data collection and organization for later compute
-
 # DATA STRUCTURE
 # links  = { link_num : LinkBody instances for the link_num }
 # these instances have related tags as values{ 'link_num'.tags[link_frame_tag_id] }
@@ -515,21 +510,9 @@ def compute_reprojection_error(tag):
     return avg_error
 
 
-
 def main():
 
-    total_frames = 0
-    total_time = 0
-    
-    # Create a video writer object
-    fourcc = cv2.VideoWriter_fourcc(*'XVID')
-    out = cv2.VideoWriter('output.avi', fourcc, cap.get(cv2.CAP_PROP_FPS), (display_width, display_height))
-
-
     while True:
-        start_time = time.time()
-
-
         ret, frame = cap.read()
         if not ret:
             break
@@ -570,8 +553,6 @@ def main():
                         world_tag_counter += 1
 
 
-            
-
             for tag in result_april_tags:
                 if tag.tag_id not in WORLD_TAGS:
                     
@@ -584,19 +565,19 @@ def main():
                     
                     # links[link_num].get_link_tag_id(link_tag_id)
 
+                        
                     detected_tag = Tag(frame, tag, R_camera_to_world, t_camera_to_world, april_tag_size)
                     links[link_num].append(detected_tag, link_tag_id)
                     # detected_tag.draw_original_boundary()
                     cf_tag_corners = detected_tag.draw_tag_boundary()
                     detected_tag.draw_axes()
                     # detected_tag.draw_centroid_axes(link_tag_id)
-                   
+                    
 
                     detected_tag.calculate_linkbody(link_tag_id)
                     # detected_tag.draw_linkbody(link_tag_id)
 
                     R_tag_to_world, t_tag_to_world = detected_tag.compute_tranformation()
-                    # estimate wf pose
                     wf_centroid, wf_tip = detected_tag.project_to_world(R_tag_to_world, t_tag_to_world, cf_tag_corners, detected_tag.cf_linkbody_pts, link_tag_id)
                     
                     
@@ -612,30 +593,17 @@ def main():
                 link_body.compute_mean()
                 link_body.display_linkbody(R_world_to_camera, t_world_to_camera)
                 # link_body.compute_axes() # compute x axis from centroid to the tip
-     
+        
                 
                 # reset dataframe for the next frame -> later u will use this line to collect data   
+                
 
-        # Counting the frames
-        total_frames += 1
-        total_time += (end_time-start_time)              
-
-        out.write(framed_resized)
         frame_resized = cv2.resize(frame, (display_width, display_height))
         cv2.imshow("AprilTags Pose Estimation", frame_resized)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):  # Press ESC to exit
-            end_time = time.time()
-
             break
-    
-    if total_time != 0:
-        fps = total_frames/total_time
-        print(f"Average FPS: {fps}")
-    else:
-        print("Total time is zero.")
 
-    out.release() # close the video file
     cap.release()
     cv2.destroyAllWindows()
 
