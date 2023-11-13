@@ -9,7 +9,11 @@ import pandas as pd
 ## GLOBAL CONSTANTS ##
 ######################
 
-print(pd.__version__)
+DEBUG = False
+
+def debug_print(*args):
+    if DEBUG:
+        print(*args)
 
 # Define world tags and their locations in world frame
 WORLD_TAGS = {
@@ -114,9 +118,9 @@ class Tag():
         return None
 
     # def draw_centroid_axes(self, link_tag_id):
-    #     print(link_tag_id)
-    #     # print(type(tag.tag_id), tag.tag_id)
-    #     print(type(link_tag_id), link_tag_id)
+    #     debug_print(link_tag_id)
+    #     # debug_print(type(tag.tag_id), tag.tag_id)
+    #     debug_print(type(link_tag_id), link_tag_id)
 
     #     axis_length = 0.05
 
@@ -174,7 +178,7 @@ class Tag():
     def draw_linkbody(self, link_tag_id, servo_extension = 0):
         
         
-        print("Shape of cf_linkbody_pts:", self.cf_linkbody_pts.shape)
+        debug_print("Shape of cf_linkbody_pts:", self.cf_linkbody_pts.shape)
 
         for pt in self.cf_linkbody_pts:
             neon_green = (57, 255, 20)
@@ -196,11 +200,11 @@ class Tag():
             R_tag_to_world = np.dot(self.R_camera_to_world, self.tag.pose_R)
             t_tag_to_world = np.dot(self.R_camera_to_world, self.tag.pose_t) + self.t_camera_to_world
 
-            print("R_tag_to_world:", R_tag_to_world)
-            print("t_tag_to_world:", t_tag_to_world)
+            debug_print("R_tag_to_world:", R_tag_to_world)
+            debug_print("t_tag_to_world:", t_tag_to_world)
 
             if np.any(np.isnan(R_tag_to_world)) or np.any(np.isnan(t_tag_to_world)):
-                print("Warning: Transformation matrices contain NaN values!")
+                debug_print("Warning: Transformation matrices contain NaN values!")
 
         return R_tag_to_world, t_tag_to_world
 
@@ -299,8 +303,8 @@ class LinkBody:
             tip_type+'_x': tip[0], tip_type+'_y': tip[1], tip_type+'_z': tip[2],
             'cf_axes_pts_o': cf_axes_pts[0], 'cf_axes_pts_x': cf_axes_pts[1], 'cf_axes_pts_y': cf_axes_pts[2], 'cf_axes_pts_z': cf_axes_pts[3]
         }
-        # print(type(self.data))
-        print(self.data)
+        # debug_print(type(self.data))
+        debug_print(self.data)
         # self.data = self.data.append(new_data, ignore_index = True)
         self.data = pd.concat([self.data, pd.DataFrame([new_data])], ignore_index=True)
 
@@ -356,7 +360,7 @@ class LinkBody:
         # TO DISPLAY AXES IN CF
         cf_axes_pts = (mean_row['cf_axes_pts_o'], mean_row['cf_axes_pts_x'], mean_row['cf_axes_pts_y'], mean_row['cf_axes_pts_z'])
         
-        print("CF_AXES_PTS: ", cf_axes_pts)
+        debug_print("CF_AXES_PTS: ", cf_axes_pts)
          # Draw the transformed XYZ axes on to the Camera Frame
         colors = [(0, 0, 255), (0, 255, 0), (255, 0, 0)]
         for i in range(1, 4):
@@ -367,12 +371,12 @@ class LinkBody:
         wf_linkbody_mean = np.array([wf_centroid, wf_upper_tip, wf_bottom_tip], dtype = np.float32)
         # cf_linkbody_mean = np.dot(R_world_to_camera, a) + t_world_to_camera
         cf_linkbody_mean, _ = cv2.projectPoints(wf_linkbody_mean, R_world_to_camera, t_world_to_camera, mtx, dist)
-        print(f"cf_linkbody_mean{cf_linkbody_mean}")
+        debug_print(f"cf_linkbody_mean{cf_linkbody_mean}")
         # cf_linkbody_mean = cf_linkbody_mean.reshape(-1, 2).astype(int)
         cf_linkbody_reshaped = cf_linkbody_mean.reshape(-1, 2)
         mask = ~np.isnan(cf_linkbody_reshaped).any(axis=1)
         cf_linkbody_reshaped[mask] = cf_linkbody_reshaped[mask].astype(int) # convert to integer
-        print(f"cf_linkbody_mean{cf_linkbody_reshaped}")
+        debug_print(f"cf_linkbody_mean{cf_linkbody_reshaped}")
 
 
         centroid_str = f"Centroid: X: {wf_centroid[0]*100:.1f}, Y: {wf_centroid[1]*100:.1f}, Z: {wf_centroid[2]*100:.1f}"
@@ -384,9 +388,9 @@ class LinkBody:
         counter = 0
 
         for pt in cf_linkbody_reshaped[mask]:
-            # print(pt)
+            # debug_print(pt)
             if not np.isnan(np.array(pt)).any(): # skip
-                # print(tuple(pt))
+                # debug_print(tuple(pt))
                 # cv2.circle(self.frame, tuple(pt), 5, neon_green, -1)
                 cv2.circle(self.frame, center=(int(pt[0]), int(pt[1])), radius=5, color=neon_green, thickness=-1)
                 
@@ -409,7 +413,7 @@ class LinkBody:
 # Video capture setup
 display_width = 1920
 display_height = 1080
-cap = cv2.VideoCapture(4)
+cap = cv2.VideoCapture(0)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 3840)  # Width
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 2160)  # Height
 
@@ -423,12 +427,12 @@ calib_file = os.path.join("particleTrussServer/RM_Retinas/assets/calibration", "
 if os.path.exists(calib_file):
     with np.load(calib_file) as X:
         mtx, dist, rvecs, tvecs = X['mtx'], X['dist'], X['rvecs'], X['tvecs']
-        print(f"mtx: {mtx}")
-        print(f"dist: {dist}")
-        print(f"rvecs: {rvecs}")
-        print(f"tvecs: {tvecs}")
+        debug_print(f"mtx: {mtx}")
+        debug_print(f"dist: {dist}")
+        debug_print(f"rvecs: {rvecs}")
+        debug_print(f"tvecs: {tvecs}")
 else:
-    print("Calibration data does not exist. Please run calibration.py first")
+    debug_print("Calibration data does not exist. Please run calibration.py first")
     exit()
 
 # Extract camera_params, which are focal lengths and optical center each in x, y direction
@@ -460,6 +464,8 @@ detector = dt_apriltags.Detector(searchpath=['apriltags'],
 #     'center': tag.center
 # }
 
+# THREADING
+retinas_data = {}
 
 #######################
 ## UTILITY FUNCTIONS ##
@@ -511,6 +517,8 @@ def compute_reprojection_error(tag):
 
 
 def main():
+
+    global retinas_data
 
     while True:
         ret, frame = cap.read()
@@ -567,7 +575,7 @@ def main():
 
                         
                     detected_tag = Tag(frame, tag, R_camera_to_world, t_camera_to_world, april_tag_size)
-                    links[link_num].append(detected_tag, link_tag_id)
+                    links[link_num].append(detected_tag, link_tag_id) # custom append!
                     # detected_tag.draw_original_boundary()
                     cf_tag_corners = detected_tag.draw_tag_boundary()
                     detected_tag.draw_axes()
@@ -585,7 +593,8 @@ def main():
                     # update data
                     links[link_num].update_data(link_num, link_tag_id, wf_centroid, wf_tip)
 
-            for link_body in links.values():
+    
+            for link_num, link_body in links.items():
                 
                 # first_tag_link_tag_id = next(iter(link_body.tags.keys()))
                 # first_tag = next(iter(link_body.tags.values()))
@@ -593,7 +602,19 @@ def main():
                 link_body.compute_mean()
                 link_body.display_linkbody(R_world_to_camera, t_world_to_camera)
                 # link_body.compute_axes() # compute x axis from centroid to the tip
-        
+
+                ######################################################################
+                # implmenting something that retinas to cl controller here #
+                ######################################################################
+
+                mean_values_data = link_body.data[link_body.data['link_tag_id'] == 'Mean']
+                mean_row = mean_values_data.iloc[0]
+
+                retinas_data[link_num] = {
+                    'centroid': (mean_row['centroid_x'], mean_row['centroid_y'], mean_row['centroid_z']),
+                    'upper_tip': (mean_row['upper_tip_x'], mean_row['upper_tip_y'], mean_row['upper_tip_z']),
+                    'bottom_tip': (mean_row['bottom_tip_x'], mean_row['bottom_tip_y'], mean_row['bottom_tip_z'])
+                }
                 
                 # reset dataframe for the next frame -> later u will use this line to collect data   
                 
@@ -606,6 +627,13 @@ def main():
 
     cap.release()
     cv2.destroyAllWindows()
+
+def retinas_thread():
+    try:
+        main()
+
+    except Exception as e:
+        debug_print(f"Error in retinas thread: {e}")
 
 if __name__ == "__main__":
     main()
