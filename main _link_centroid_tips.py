@@ -289,14 +289,16 @@ class LinkTags:
 # Video capture setup
 display_width = 1920
 display_height = 1080
-cap = cv2.VideoCapture(2)
+cap = cv2.VideoCapture(4)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 3840)  # Width
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 2160)  # Height
 
+# Loading calibration results
+calib_file = os.path.join("particleTrussServer/RM_Retinas/assets/calibration", "calibration_data.npz")
 
+# The path when pwd is RM_Retinas
+# calib_file = os.path.join("assets/calibration", 'calibration_data.npz')
 
-# Loading Camera Calibration Results
-calib_file = os.path.join("assets/calibration", 'calibration_data.npz')
 if os.path.exists(calib_file):
     with np.load(calib_file) as X:
         mtx, dist, rvecs, tvecs = X['mtx'], X['dist'], X['rvecs'], X['tvecs']
