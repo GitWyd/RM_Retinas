@@ -48,9 +48,17 @@ Calibrate Your Camera:
 
 Once calibration is complete, launch the main application:
 
-    python main.py
+## Demonstration Videos
+
+### 1D Control
+
+- **Closed Loop Control of a Single Robot Link Using Retinas for Localization**: This video demonstrates the closed-loop control capabilities of Retinas V2 in a 1D setting. Watch the video [here](https://youtu.be/w-aqEveBBN8).
+
+### 2D Control
+
+- **2D Closed Loop Control of Multiple Truss Modular Robot Links Using Retinas for Localization**: This video showcases the 2D control abilities of multiple truss modular robot links. Currently, the focus is on changes in morphology, with topology experiments planned post-implementation of the 3D controller. Watch the video [here](https://youtu.be/kj56VisF52s).
 
 ## Notes
 
 - The spatial relationships of the predefined world tags are hardcoded into the script. Kindly modify if your world tag setups are different.
-- ELP 4KHDR01 USB Camera was used, but any 4K Camera would suffice
+- ELP 4KHDR01 USB Camera was used, but any 4K Camera would suffice.
