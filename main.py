@@ -523,7 +523,7 @@ def compute_reprojection_error(tag):
 def main():
 
     global retinas_data
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(2)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 3840)  # Width
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 2160)  # Height
 
