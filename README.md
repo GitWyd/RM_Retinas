@@ -52,7 +52,7 @@ Once calibration is complete, launch the main application:
 
 - **This video demonstrates Retinas. Watch the video below.**
   
-[![Retinas Demonstration](https://img.youtube.com/vi/[Video-ID]/default.jpg)](https://youtu.be/BVpfQ9duoic)
+[![Retinas Demonstration](https://img.youtube.com/vi/[BVpfQ9duoic]/default.jpg)](https://youtu.be/BVpfQ9duoic)
 
 
 ## Notes
