@@ -50,10 +50,8 @@ Once calibration is complete, launch the main application:
 
 ## Demonstration Videos
 
-![Retinas Calibration](assets/calibration/retinas_v1.png)
-
 - **This video demonstrates Retinas. Watch the video below.**
-[![Retinas Demonstration](https://img.youtube.com/vi/BVpfQ9duoic/maxresdefault.jpg)](https://youtu.be/BVpfQ9duoic)
+[![Retinas Demonstration](https://img.youtube.com/vi/BVpfQ9duoic/hqdefault.jpg)](https://youtu.be/BVpfQ9duoic)
 
 
 ## Noteshttps://img.youtube.com/vi/[Video-ID]/maxresdefault.jpg
