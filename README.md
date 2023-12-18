@@ -52,11 +52,11 @@ Once calibration is complete, launch the main application:
 
 - **This video demonstrates Retinas. Watch the video below.**
   
-[![Retinas Demonstration](https://img.youtube.com/vi/BVpfQ9duoic/hqdefault.jpg)](https://youtu.be/BVpfQ9duoic)
+[![Retinas Demonstration](https://img.youtube.com/vi/[Video-ID]/default.jpg
+)](https://youtu.be/BVpfQ9duoic)
 
 
-## Noteshttps://img.youtube.com/vi/[Video-ID]/maxresdefault.jpg
-
+## Notes
 
 - The spatial relationships of the predefined world tags are hardcoded into the script. Kindly modify if your world tag setups are different.
 - ELP 4KHDR01 USB Camera was used, but any 4K Camera would suffice.
