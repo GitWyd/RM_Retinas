@@ -48,9 +48,9 @@ Calibrate Your Camera:
 
 Once calibration is complete, launch the main application:
 
-## Demonstration Videos
+## Demonstration Video
 
-- **This video demonstrates Retinas. Watch the video below.**
+- **This video demonstrates Retinas.**
   
 [![Retinas Demonstration](https://img.youtube.com/vi/BVpfQ9duoic/hqdefault.jpg)](https://youtu.be/BVpfQ9duoic)
 
