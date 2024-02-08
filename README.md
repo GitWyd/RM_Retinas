@@ -1,6 +1,6 @@
-# Retinas V2
+# Retinas
 
-Inspired by the original Retinas repository, Retinas V2 offers enhanced capabilities for world reconstruction and localization for truss modular robots using AprilTags.
+Retinas offers 3D world reconstruction and robot link localization system for modular robots using multiple AprilTags.
 
 ## Requirements
 
@@ -48,15 +48,12 @@ Calibrate Your Camera:
 
 Once calibration is complete, launch the main application:
 
-## Demonstration Videos
+## Demonstration Video
 
-### 1D Control
+- **This video demonstrates Retinas.**
+  
+[![Retinas Demonstration](https://img.youtube.com/vi/BVpfQ9duoic/hqdefault.jpg)](https://youtu.be/BVpfQ9duoic)
 
-- **Closed Loop Control of a Single Robot Link Using Retinas for Localization**: This video demonstrates the closed-loop control capabilities of Retinas V2 in a 1D setting. Watch the video [here](https://youtu.be/w-aqEveBBN8).
-
-### 2D Control
-
-- **2D Closed Loop Control of Multiple Truss Modular Robot Links Using Retinas for Localization**: This video showcases the 2D control abilities of multiple truss modular robot links. Currently, the focus is on changes in morphology, with topology experiments planned post-implementation of the 3D controller. Watch the video [here](https://youtu.be/kj56VisF52s).
 
 ## Notes
 
